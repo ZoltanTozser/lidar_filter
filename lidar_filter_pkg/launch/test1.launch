@@ -1,0 +1,7 @@
+<launch>
+    <node name="rviz_config" pkg="rviz" type="rviz"  args="-d $(find lidar_filter_pkg)/config/test1.rviz" output="screen"/>
+    <node name="filter" pkg="lidar_filter_pkg" type="lidar_filter.py" output="screen">
+        <param name="topic_name" value="/left_os1/os1_cloud_node/points"/>
+        <param name="fixed_frame" value="left_os1/os1_lidar"/>
+    </node>
+</launch>
