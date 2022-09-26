@@ -8,6 +8,7 @@ Dell laptop:
 - Intel Core i5-7200U CPU
 - 8GB memória
 - Radeon R7 M445 graphical card
+- 256GB SSD
 - Ubuntu 20.04
 
 Későbbiekben lehet, hogy lesz jobb gép is tesztelésre. 
@@ -29,4 +30,4 @@ Későbbiekben lehet, hogy lesz jobb gép is tesztelésre.
 - szelektált pontok publikálása
 - launch fájl elkészítése
 - rviz config fájl elkészítése
-- képek feltöltés
+- képek feltöltése
