@@ -5,13 +5,11 @@
 Visual Studio Code, ROS Noetic, Python 3.8.10, Terminator 1.91
 
 Dell laptop:
-- Intel Core i5-7200U CPU
-- 8GB memória
-- Radeon R7 M445 graphical card
-- 256GB SSD
-- Ubuntu 20.04
-
-Későbbiekben lehet, hogy lesz jobb gép is tesztelésre. 
+- Intel Core i7-12700H CPU
+- 32GB memória
+- Nvidia Geforce RTX 3070 graphical card
+- 1000GB SSD
+- Ubuntu 20.04 
 
 ## Teszteléshez felhasznált rosbag: 
 - leaf-2021-04-23-campus-bag
