@@ -29,6 +29,51 @@ ros::Publisher pub_frame;
 ros::Publisher pub_non_road;
 
 
+// GYORSRENDEZŐ SEGÉDFÜGGVÉNYEK
+
+void swap(float *a, float *b)
+{
+    float temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int partition(float ***arr_3d, int arc, int piece, int low, int high)
+{
+    float pivot = arr_3d[arc][high][4];
+    int i = (low - 1);
+
+    for (int j = low; j <= high - 1; j++)
+    {
+        if (arr_3d[arc][j][4])
+        {
+            i++;
+            for (int sw = 0; sw < 7; sw++)
+            {
+                swap(&arr_3d[arc][i][sw], &arr_3d[arc][j][sw]);
+            }
+        }
+    }
+
+    for (int sw = 0; sw < 7; sw++)
+    {
+        swap(&arr_3d[arc][i+1][sw], &arr_3d[arc][high][sw]);
+    }
+
+    return (i + 1);
+}
+
+void quicksort(float ***arr_3d, int arc, int piece, int low, int high)
+{
+    if (low < high)
+    {
+        int pi = partition(arr_3d, arc, piece, low, high);
+        quicksort(arr_3d, arc, piece, low, pi - 1);
+        quicksort(arr_3d, arc, piece, pi + 1, high);
+    }
+}
+
+
 void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 {
     int i, j, k;
@@ -326,6 +371,13 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         }
 
+
+        // ÚT PONTOK SZŰRÉSE
+
+        for (i = 0; i < index; i++)
+        {
+            quicksort(arr_3d, i, piece, 0, index_array[i] - 1);
+        }
 
         // A CSOPORTOK FELTÖLTÉSE
 
