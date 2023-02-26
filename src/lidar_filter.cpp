@@ -472,7 +472,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
 
-            
+           
             if (blind_spot == 0)
             {
                 not_road = 0;
@@ -536,24 +536,24 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
         }
-        
 
-        for (i = 360; i <= 0 + beam_zone; --i)
+
+        for (i = 360; i >= 0 + beam_zone; --i)
         {
             blind_spot = 0;
 
             if (x_direction == 0)
             {
-                if ((quarter1 != 0 && quarter4 != 360 && (i <= quarter1 || i >= quarter4)) ||
+                if ((quarter1 != 0 && quarter4 != 360 && (i <= quarter1 || i >= quarter4)) || 
                     (quarter2 != 180 && quarter3 != 180 && i >= quarter2 && i <= quarter3))
                 {
                     blind_spot = 1;
                 }
             }
-            
+
             else if (x_direction == 1)
             {
-                if ((quarter2 != 180 && i >= quarter2 && i <= 270) ||
+                if ((quarter2 != 180 && i >= quarter2 && i <= 270) || 
                     (quarter1 != 0 && (i <= quarter1 || i >= 270)))
                 {
                     blind_spot = 1;
@@ -562,14 +562,14 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
             else
             {
-                if ((quarter4 != 360 && (i >= quarter4 || i <= 90)) ||
+                if ((quarter4 != 360 && (i >= quarter4 || i <= 90)) || 
                     (quarter3 != 180 && i <= quarter3 && i >= 90))
                 {
                     blind_spot = 1;
                 }
             }
-
             
+
             if (blind_spot == 0)
             {
                 not_road = 0;
@@ -598,11 +598,11 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
                     for (k = 1; k < index; k++)
                     {
-                        if (i == 360 + beam_zone)
+                        if (i == 0 + beam_zone)
                         {
                             current_degree = 0;
                         }
-                        else 
+                        else
                         {
                             current_degree = i - arc_distance / ((max_distance[k] * M_PI) / 180);
                         }
@@ -621,7 +621,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
                         if (not_road == 1)
                             break;
-                    
+
                         for (l = index_array[k] - 1; arr_3d[k][l][4] >= current_degree && l >= 0; --l)
                         {
                             if (arr_3d[k][l][4] <= i)
