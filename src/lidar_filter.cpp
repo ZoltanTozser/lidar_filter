@@ -472,7 +472,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
 
-           
+          
             if (blind_spot == 0)
             {
                 not_road = 0;
@@ -537,7 +537,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         }
 
-
+/*
         for (i = 360; i >= 0 + beam_zone; --i)
         {
             blind_spot = 0;
@@ -633,7 +633,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
         }
-        
+  */      
         
         // A CSOPORTOK FELTÖLTÉSE
 
