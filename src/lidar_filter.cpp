@@ -664,6 +664,61 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         }
     
 
+        // LEGTÁVOLABBI ÚT PONT KERESÉSE ADOTT FOKBAN (MARKER PONTOK)
+
+        float marker_array_points[piece][4];
+        float max_distance_road;
+        int c = 0;
+        int id_1, id_2;
+        int red_points;
+
+        for (i = 0; i <= 360; i++)
+        {
+            id_1 = -1;
+            id_2 = -1;
+            max_distance_road = 0;
+            red_points = 0;
+        
+
+            for (j = 0; j < index; j++)
+            {
+                for (k = 0; k < index_array[j]; k++)
+                {
+                    if (arr_3d[j][k][6] != 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
+                    {
+                        red_points = 1;
+                        break;
+                    }
+
+                    if (arr_3d[j][k][6] == 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
+                    {
+                        d = sqrt(pow(0 - arr_3d[j][k][0], 2) + pow(0 - arr_3d[j][k][1], 2));
+
+                        if (d > max_distance_road)
+                        {
+                            max_distance_road = d;
+                            id_1 = j;
+                            id_2 = k;
+                        }
+                    }
+                }
+
+                if (red_points == 1)
+                    break;
+            }
+
+
+            if (id_1 != -1 && id_2 != -1)
+            {
+                marker_array_points[c][0] = arr_3d[id_1][id_2][0];
+                marker_array_points[c][1] = arr_3d[id_1][id_2][1];
+                marker_array_points[c][2] = arr_3d[id_1][id_2][2];
+                marker_array_points[c][3] = red_points;
+                c++;
+            }
+        }
+        
+
         // 3D DINAMIKUS TÖMB FELSZABADÍTÁSA
         
         for (i = 0; i < channels; i++)
