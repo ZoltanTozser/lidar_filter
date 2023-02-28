@@ -1,10 +1,11 @@
 #include <iostream>
-#include <ros/ros.h>
-#include <pcl_ros/point_cloud.h>
 #include <cmath>
 #include <math.h>
 #include <algorithm>
-
+#include <ros/ros.h>
+#include <pcl_ros/point_cloud.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 int channels = 64;
 
@@ -26,11 +27,12 @@ float min_z = -3;
 float max_z = -1;
 
 std::string topic_name = "/left_os1/os1_cloud_node/points";
-
+std::string fixed_frame = "left_os1/os1_lidar";
 
 ros::Publisher pub_frame;
 ros::Publisher pub_non_road;
 ros::Publisher pub_road;
+ros::Publisher pub_marker_array;
 
 
 // GYORSRENDEZŐ SEGÉDFÜGGVÉNYEK
@@ -390,7 +392,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         float quarter1 = 0, quarter2 = 180, quarter3 = 180, quarter4 = 360; 
         int c1 = -1, c2 = -1, c3 = -1, c4 = -1;
-
+/*
         for (i = 0; i < index_array[1]; i++)
         {
             if (arr_3d[1][i][6] == 2)
@@ -432,7 +434,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
         }
-
+*/
 
         float arc_distance;
         int not_road;
@@ -444,7 +446,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         for (i = 0; i <= 360 - beam_zone; i++)
         {
             blind_spot = 0;
-
+/*
             if (x_direction == 0)
             {
                 if ((quarter1 != 0 && quarter4 != 360 && (i <= quarter1 || i >= quarter4)) ||
@@ -471,7 +473,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     blind_spot = 1;
                 }
             }
-
+*/
           
             if (blind_spot == 0)
             {
@@ -717,7 +719,183 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 c++;
             }
         }
-        
+
+
+        // MARKER ÖSSZEÁLLÍTÁSA
+
+        if (c > 2)
+        {
+            if (marker_array_points[0][3] = 0 && marker_array_points[1][3] == 1)
+                marker_array_points[0][3] = 1;
+
+            if (marker_array_points[c - 1][3] == 0 && marker_array_points[c - 2][3] == 1)
+                marker_array_points[c - 1][3] == 1;
+
+            if (marker_array_points[0][3] = 1 && marker_array_points[1][3] == 0)
+                marker_array_points[0][3] = 0;
+
+            if (marker_array_points[c - 1][3] == 1 && marker_array_points[c - 2][3] == 0)
+                marker_array_points[c - 1][3] = 0;
+
+
+            for (i = 2; i <= c - 3; i++)
+            {
+                if (marker_array_points[i][3] == 0 && marker_array_points[i - 1][3] == 1 && marker_array_points[i + 1][3] == 1)
+                    marker_array_points[i][3] = 1;
+            }
+
+
+            for (i = 2; i <= c - 3; i++)
+            {
+                if (marker_array_points[i][3] == 1 && marker_array_points[i - 1][3] == 0 && marker_array_points[i + 1][3] == 0)
+                    marker_array_points[i][3] = 0;
+            }
+
+
+            visualization_msgs::MarkerArray marker_arr;
+            visualization_msgs::Marker line_segment;
+            geometry_msgs::Point point;          
+
+            int line_segment_id = 0;
+
+            line_segment.header.frame_id = fixed_frame;
+            line_segment.header.stamp = ros::Time();
+            line_segment.type = visualization_msgs::Marker::LINE_STRIP;
+            line_segment.action = visualization_msgs::Marker::ADD;
+
+            for (i = 0; i < c; i++)
+            {
+                point.x = marker_array_points[i][0];
+                point.y = marker_array_points[i][1];
+                point.z = marker_array_points[i][2];
+            
+
+                if (i == 0)
+                {
+                    line_segment.points.push_back(point);
+                }
+
+                else if (marker_array_points[i][3] == marker_array_points[i - 1][3])
+                {
+                    line_segment.points.push_back(point);
+
+                    if (i == c - 1)
+                    {
+                        line_segment.id = line_segment_id;
+
+                        line_segment.pose.position.x = 0;
+                        line_segment.pose.position.y = 0;
+                        line_segment.pose.position.z = 0;
+
+                        line_segment.pose.orientation.x = 0.0;
+                        line_segment.pose.orientation.y = 0.0;
+                        line_segment.pose.orientation.z = 0.0;
+                        line_segment.pose.orientation.w = 1.0;
+
+                        line_segment.scale.x = 0.5;
+                        line_segment.scale.y = 0.5;
+                        line_segment.scale.z = 0.5;
+                    
+                        if (marker_array_points[i][3] == 0)
+                        {
+                            line_segment.color.a = 1.0;
+                            line_segment.color.r = 0.0;
+                            line_segment.color.g = 1.0;
+                            line_segment.color.b = 0.0;
+                        }
+
+                        else
+                        {
+                            line_segment.color.a = 1.0;
+                            line_segment.color.r = 1.0;
+                            line_segment.color.g = 0.0;
+                            line_segment.color.b = 0.0;
+                        }
+
+                        marker_arr.markers.push_back(line_segment);
+                        line_segment.points.clear();
+                    }
+                }
+
+
+                else if (marker_array_points[i][3] != marker_array_points[i - 1][3] && marker_array_points[i][3] == 0)
+                {
+                    line_segment.points.push_back(point);
+
+                    line_segment.id = line_segment_id;
+                    line_segment_id++;
+
+                    line_segment.pose.position.x = 0;
+                    line_segment.pose.position.y = 0;
+                    line_segment.pose.position.z = 0;
+
+                    line_segment.pose.orientation.x = 0.0;
+                    line_segment.pose.orientation.y = 0.0;
+                    line_segment.pose.orientation.z = 0.0;
+                    line_segment.pose.orientation.w = 1.0;
+
+                    line_segment.scale.x = 0.5;
+                    line_segment.scale.y = 0.5;
+                    line_segment.scale.z = 0.5;
+
+                    line_segment.color.a = 1.0;
+                    line_segment.color.r = 1.0;
+                    line_segment.color.g = 0.0;
+                    line_segment.color.b = 0.0;
+
+                    marker_arr.markers.push_back(line_segment);
+                    line_segment.points.clear();
+                    line_segment.points.push_back(point);
+                }
+
+
+                else if (marker_array_points[i][3] != marker_array_points[i - 1][3] && marker_array_points[i][3] == 1)
+                {
+                    line_segment.points.push_back(point);
+
+                    line_segment.id = line_segment_id;
+                    line_segment_id++;
+
+                    line_segment.pose.position.x = 0;
+                    line_segment.pose.position.y = 0;
+                    line_segment.pose.position.z = 0;
+
+                    line_segment.pose.orientation.x = 0.0;
+                    line_segment.pose.orientation.y = 0.0;
+                    line_segment.pose.orientation.z = 0.0;
+                    line_segment.pose.orientation.w = 1.0;
+
+                    line_segment.scale.x = 0.5;
+                    line_segment.scale.y = 0.5;
+                    line_segment.scale.z = 0.5;
+
+                    line_segment.color.a = 1.0;
+                    line_segment.color.r = 0.0;
+                    line_segment.color.g = 1.0;
+                    line_segment.color.b = 0.0;
+
+                    marker_arr.markers.push_back(line_segment);
+                    line_segment.points.clear();
+                
+                    point.x = marker_array_points[i - 1][0];
+                    point.y = marker_array_points[i - 1][1];
+                    point.z = marker_array_points[i - 1][2];
+                    line_segment.points.push_back(point);
+                    
+                
+                    point.x = marker_array_points[i][0];
+                    point.y = marker_array_points[i][1];
+                    point.z = marker_array_points[i][2];
+                    line_segment.points.push_back(point);
+                }
+
+                line_segment.lifetime = ros::Duration(0.05);
+            }
+
+            pub_marker_array.publish(marker_arr);
+
+        }
+
 
         // 3D DINAMIKUS TÖMB FELSZABADÍTÁSA
         
@@ -761,6 +939,7 @@ int main(int argc, char **argv)
     pub_frame = node.advertise<pcl::PCLPointCloud2>("filtered_frame", 1);
     pub_non_road = node.advertise<pcl::PCLPointCloud2>("filtered_non_road", 1);
     pub_road = node.advertise<pcl::PCLPointCloud2>("filtered_road", 1);
+    pub_marker_array = node.advertise<visualization_msgs::MarkerArray>("marker_array", 1);
 
     ros::spin();
 
