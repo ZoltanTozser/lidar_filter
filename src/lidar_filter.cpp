@@ -7,6 +7,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+
 int channels = 64;
 
 float interval = 0.1800;
@@ -34,8 +35,8 @@ ros::Publisher pub_non_road;
 ros::Publisher pub_road;
 ros::Publisher pub_marker_array;
 
-
-// GYORSRENDEZŐ SEGÉDFÜGGVÉNYEK
+ 
+// GYORSRENDEZŐ SEGÉDFÜGGVÉNYEK 
 
 void swap(float *a, float *b)
 {
@@ -46,27 +47,30 @@ void swap(float *a, float *b)
 
 int partition(float ***arr_3d, int arc, int piece, int low, int high)
 {
-    float pivot = arr_3d[arc][high][4];
-    int i = (low - 1);
+    float pivot = arr_3d[arc][low][4];
+    int i = low - 1;
+    int j = high + 1;
 
-    for (int j = low; j <= high - 1; j++)
+    while (true)
     {
-        if (arr_3d[arc][j][4] < pivot)
+        do
         {
             i++;
-            for (int sw = 0; sw < 7; sw++)
+        } while (arr_3d[arc][i][4] < pivot);
+
+        do
+        {
+            j--;
+        } while (arr_3d[arc][j][4] > pivot);
+
+        if (i >= j)
+            return j;
+
+        for (int sw = 0; sw < 7; sw++)
             {
                 swap(&arr_3d[arc][i][sw], &arr_3d[arc][j][sw]);
             }
-        }
     }
-
-    for (int sw = 0; sw < 7; sw++)
-    {
-        swap(&arr_3d[arc][i+1][sw], &arr_3d[arc][high][sw]);
-    }
-
-    return (i + 1);
 }
 
 void quicksort(float ***arr_3d, int arc, int piece, int low, int high)
@@ -74,7 +78,7 @@ void quicksort(float ***arr_3d, int arc, int piece, int low, int high)
     if (low < high)
     {
         int pi = partition(arr_3d, arc, piece, low, high);
-        quicksort(arr_3d, arc, piece, low, pi - 1);
+        quicksort(arr_3d, arc, piece, low, pi);
         quicksort(arr_3d, arc, piece, pi + 1, high);
     }
 }
