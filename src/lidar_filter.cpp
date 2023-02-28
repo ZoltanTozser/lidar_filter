@@ -13,12 +13,11 @@ int channels = 64;
 float interval = 0.1800;
 
 int curb_points = 5;
-double curb_height = 0.0500;
-double angle_filter1 = 150;
-double angle_filter2 = 140;
+float curb_height = 0.0500;
+float angle_filter1 = 150;
+float angle_filter2 = 140;
 
 float beam_zone = 30;
-int x_direction = 0;
 
 float min_x = 0; 
 float max_x = 30;
@@ -394,252 +393,75 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         }
 
 
-        float quarter1 = 0, quarter2 = 180, quarter3 = 180, quarter4 = 360; 
-        int c1 = -1, c2 = -1, c3 = -1, c4 = -1;
-/*
-        for (i = 0; i < index_array[1]; i++)
-        {
-            if (arr_3d[1][i][6] == 2)
-            {
-                if (arr_3d[1][i][4] >= 0 && arr_3d[1][i][4] < 90)
-                {
-                    if (arr_3d[1][i][4] > quarter1)
-                    {
-                        quarter1 = arr_3d[1][i][4];
-                        c1 = i;
-                    }
-                }
-
-                else if(arr_3d[1][i][4] >= 90 && arr_3d[1][i][4] < 180)
-                {
-                    if (arr_3d[1][i][4] < quarter2)
-                    {
-                        quarter2 = arr_3d[1][i][4];
-                        c2 = i;
-                    }
-                }
-
-                else if(arr_3d[1][i][4] >= 180 && arr_3d[1][i][4] < 270)
-                {
-                    if (arr_3d[1][i][4] > quarter3)
-                    {
-                        quarter3 = arr_3d[1][i][4];
-                        c3 = i;
-                    }
-                }
-
-                else 
-                {
-                    if (arr_3d[1][i][4] < quarter4)
-                    {
-                        quarter4 = arr_3d[1][i][4];
-                        c4 = i;
-                    }
-                }
-            }
-        }
-*/
-
         float arc_distance;
         int not_road;
-        int blind_spot;
         float current_degree;
 
         arc_distance = ((max_distance[0] * M_PI) / 180) * beam_zone;
 
         for (i = 0; i <= 360 - beam_zone; i++)
-        {
-            blind_spot = 0;
-/*
-            if (x_direction == 0)
+        {   
+            not_road = 0;
+
+            for (j = 0; arr_3d[0][j][4] <= i + beam_zone && j < index_array[0]; j++)
             {
-                if ((quarter1 != 0 && quarter4 != 360 && (i <= quarter1 || i >= quarter4)) ||
-                    (quarter2 != 180 && quarter3 != 180 && i >= quarter2 && i <= quarter3))
+                if (arr_3d[0][j][4] >= i)
                 {
-                    blind_spot = 1;
-                }
-            }
-            
-            else if (x_direction == 1)
-            {
-                if ((quarter2 != 180 && i >= quarter2 && i <= 270) ||
-                    (quarter1 != 0 && (i <= quarter1 || i >= 270)))
-                {
-                    blind_spot = 1;
+                    if (arr_3d[0][j][6] == 2)
+                    {
+                        not_road = 1;
+                        break;
+                    }
                 }
             }
 
-            else
+            if (not_road == 0)
             {
-                if ((quarter4 != 360 && (i >= quarter4 || i <= 90)) ||
-                    (quarter3 != 180 && i <= quarter3 && i >= 90))
-                {
-                    blind_spot = 1;
-                }
-            }
-*/
-          
-            if (blind_spot == 0)
-            {
-                not_road = 0;
-
                 for (j = 0; arr_3d[0][j][4] <= i + beam_zone && j < index_array[0]; j++)
                 {
                     if (arr_3d[0][j][4] >= i)
                     {
-                        if (arr_3d[0][j][6] == 2)
-                        {
-                            not_road = 1;
-                            break;
-                        }
+                        arr_3d[0][j][6] = 1;
                     }
                 }
 
-                if (not_road == 0)
+                for (k = 1; k < index; k++)
                 {
-                    for (j = 0; arr_3d[0][j][4] <= i + beam_zone && j < index_array[0]; j++)
+                    if (i == 360 - beam_zone)
                     {
-                        if (arr_3d[0][j][4] >= i)
+                        current_degree = 360;
+                    }
+                    else 
+                    {
+                        current_degree = i + arc_distance / ((max_distance[k] * M_PI) / 180);
+                    }
+
+                    for (l = 0; arr_3d[k][l][4] <= current_degree && l < index_array[k]; l++)
+                    {
+                        if (arr_3d[k][l][4] >= i)
                         {
-                            arr_3d[0][j][6] = 1;
+                            if (arr_3d[k][l][6] == 2)
+                            {
+                                not_road = 1;
+                                break;
+                            }
                         }
                     }
 
-                    for (k = 1; k < index; k++)
-                    {
-                        if (i == 360 - beam_zone)
-                        {
-                            current_degree = 360;
-                        }
-                        else 
-                        {
-                            current_degree = i + arc_distance / ((max_distance[k] * M_PI) / 180);
-                        }
-
-                        for (l = 0; arr_3d[k][l][4] <= current_degree && l < index_array[k]; l++)
-                        {
-                            if (arr_3d[k][l][4] >= i)
-                            {
-                                if (arr_3d[k][l][6] == 2)
-                                {
-                                    not_road = 1;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (not_road == 1)
-                            break;
+                    if (not_road == 1)
+                        break;
                     
-                        for (l = 0; arr_3d[k][l][4] <= current_degree && l < index_array[k]; l++)
+                    for (l = 0; arr_3d[k][l][4] <= current_degree && l < index_array[k]; l++)
+                    {
+                        if (arr_3d[k][l][4] >= i)
                         {
-                            if (arr_3d[k][l][4] >= i)
-                            {
-                                arr_3d[k][l][6] = 1;
-                            }
+                            arr_3d[k][l][6] = 1;
                         }
                     }
                 }
             }
         }
 
-/*
-        for (i = 360; i >= 0 + beam_zone; --i)
-        {
-            blind_spot = 0;
-
-            if (x_direction == 0)
-            {
-                if ((quarter1 != 0 && quarter4 != 360 && (i <= quarter1 || i >= quarter4)) || 
-                    (quarter2 != 180 && quarter3 != 180 && i >= quarter2 && i <= quarter3))
-                {
-                    blind_spot = 1;
-                }
-            }
-
-            else if (x_direction == 1)
-            {
-                if ((quarter2 != 180 && i >= quarter2 && i <= 270) || 
-                    (quarter1 != 0 && (i <= quarter1 || i >= 270)))
-                {
-                    blind_spot = 1;
-                }
-            }
-
-            else
-            {
-                if ((quarter4 != 360 && (i >= quarter4 || i <= 90)) || 
-                    (quarter3 != 180 && i <= quarter3 && i >= 90))
-                {
-                    blind_spot = 1;
-                }
-            }
-            
-
-            if (blind_spot == 0)
-            {
-                not_road = 0;
-
-                for (j = index_array[0] - 1; arr_3d[0][j][4] >= i - beam_zone && j >= 0; --j)
-                {
-                    if (arr_3d[0][j][4] <= i)
-                    {
-                        if (arr_3d[0][j][6] == 2)
-                        {
-                            not_road = 1;
-                            break;
-                        }
-                    }
-                }
-
-                if (not_road == 0)
-                {
-                    for (j = index_array[0] - 1; arr_3d[0][j][4] >= i - beam_zone && j >= 0; --j)
-                    {
-                        if (arr_3d[0][j][4] <= i)
-                        {
-                            arr_3d[0][j][6] = 1;
-                        }
-                    }
-
-                    for (k = 1; k < index; k++)
-                    {
-                        if (i == 0 + beam_zone)
-                        {
-                            current_degree = 0;
-                        }
-                        else
-                        {
-                            current_degree = i - arc_distance / ((max_distance[k] * M_PI) / 180);
-                        }
-
-                        for (l = index_array[k] - 1; arr_3d[k][l][4] >= current_degree && l >= 0; --l)
-                        {
-                            if (arr_3d[k][l][4] <= i)
-                            {
-                                if (arr_3d[k][l][6] == 2)
-                                {
-                                    not_road = 1;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (not_road == 1)
-                            break;
-
-                        for (l = index_array[k] - 1; arr_3d[k][l][4] >= current_degree && l >= 0; --l)
-                        {
-                            if (arr_3d[k][l][4] <= i)
-                            {
-                                arr_3d[k][l][6] = 1;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-  */      
         
         // A CSOPORTOK FELTÖLTÉSE
 
@@ -917,15 +739,12 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
     }
     
     filtered_frame.header = msg.header;
-
     pub_frame.publish(filtered_frame);
     
     filtered_non_road.header = msg.header;
-
     pub_non_road.publish(filtered_non_road);
 
     filtered_road.header = msg.header;
-
     pub_road.publish(filtered_road);
     
 
