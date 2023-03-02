@@ -7,6 +7,15 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+std::string topic_name = "/left_os1/os1_cloud_node/points";
+std::string fixed_frame = "left_os1/os1_lidar";
+
+float min_x = 0; 
+float max_x = 30;
+float min_y = -10;
+float max_y = 10;
+float min_z = -3;
+float max_z = -1;
 
 int channels = 64;
 
@@ -19,15 +28,7 @@ float angle_filter2 = 140;
 
 float beam_zone = 30;
 
-float min_x = 0; 
-float max_x = 30;
-float min_y = -10;
-float max_y = 10;
-float min_z = -3;
-float max_z = -1;
-
-std::string topic_name = "/left_os1/os1_cloud_node/points";
-std::string fixed_frame = "left_os1/os1_lidar";
+int ghost_marker = 0;
 
 ros::Publisher pub_frame;
 ros::Publisher pub_non_road;
@@ -500,7 +501,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         int id_1, id_2;
         int red_points;
 
-        for (i = 0; i <= 360; i++)
+        for (i = 0; i <= 360; i = i + 2)
         {
             id_1 = -1;
             id_2 = -1;
@@ -512,13 +513,13 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             {
                 for (k = 0; k < index_array[j]; k++)
                 {
-                    if (arr_3d[j][k][6] != 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
+                    if (arr_3d[j][k][6] != 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 2)
                     {
                         red_points = 1;
                         break;
                     }
 
-                    if (arr_3d[j][k][6] == 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
+                    if (arr_3d[j][k][6] == 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 2)
                     {
                         d = sqrt(pow(0 - arr_3d[j][k][0], 2) + pow(0 - arr_3d[j][k][1], 2));
 
@@ -715,8 +716,18 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.points.push_back(point);
                 }
 
-                line_segment.lifetime = ros::Duration(0.05);
+                line_segment.lifetime = ros::Duration(0.5);
             }
+
+            line_segment.action = visualization_msgs::Marker::DELETE;
+
+            for (int del = line_segment_id; del < ghost_marker; del++)
+            {
+                line_segment.id++;
+                marker_arr.markers.push_back(line_segment);
+            }
+
+            ghost_marker = line_segment_id;
 
             pub_marker_array.publish(marker_arr);
 
