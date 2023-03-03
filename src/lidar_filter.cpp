@@ -84,6 +84,58 @@ void quicksort(float ***arr_3d, int arc, int piece, int low, int high)
 }
 
 
+float perpendicular_distance(float ax, float ay, float bx, float by, float point_x, float point_y)
+{
+    float dx = bx - ax;
+    float dy = by - ay;
+
+    // Normalizálás
+
+    float mag = sqrt(pow(dx, 2) + pow(dy, 2));
+    
+    if (mag > 0.0)
+    {
+        dx /= mag; 
+        dy /= mag;
+    }
+
+    float pv_x = point_x - ax;
+    float pv_y = point_y - by;
+
+    float pv_dot = dx * pv_x + dy * pv_y;
+
+    // Léptékvonal irányvektor
+
+    float ds_x = pv_x * dx;
+    float ds_y = pv_y * dy;
+
+    float a_x = pv_x - ds_x;
+    float a_y = pv_y - ds_y;
+
+    return sqrt(pow(a_x, 2) + pow(a_y, 2));
+}
+
+void ramer_douglas_peucker(float **arr, float epsilon, float **arr_rdp)
+{
+    float d_max 0.0;
+    int index = 0;
+    int end = c - 1; 
+
+    for (i = 1; i < end; i++)
+    {
+        float d = perpendicular_distance(marker_array_points[0][0], marker_array_points[0][1], 
+                                        marker_array_points[end][0], marker_array_points[end][1],
+                                        marker_array_points[i][0], rdp_marker_array_points[i][1]);
+
+        if (d > d_max)
+        {
+            index = i;
+            d_max = d;
+        }
+    }
+}
+
+
 void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 {
     int i, j, k, l;
@@ -546,6 +598,12 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 c++;
             }
         }
+
+        // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE
+
+        float rdp_marker_array_points[piece][4];
+
+        
 
 
         // MARKER ÖSSZEÁLLÍTÁSA
