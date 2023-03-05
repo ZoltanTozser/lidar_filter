@@ -115,26 +115,6 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
     return sqrt(pow(a_x, 2) + pow(a_y, 2));
 }
 
-void ramer_douglas_peucker(float **arr, float epsilon, float **arr_rdp)
-{
-    float d_max 0.0;
-    int index = 0;
-    int end = c - 1; 
-
-    for (i = 1; i < end; i++)
-    {
-        float d = perpendicular_distance(marker_array_points[0][0], marker_array_points[0][1], 
-                                        marker_array_points[end][0], marker_array_points[end][1],
-                                        marker_array_points[i][0], rdp_marker_array_points[i][1]);
-
-        if (d > d_max)
-        {
-            index = i;
-            d_max = d;
-        }
-    }
-}
-
 
 void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 {
@@ -553,7 +533,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         int id_1, id_2;
         int red_points;
 
-        for (i = 0; i <= 360; i = i + 2)
+        for (i = 0; i <= 360; i++)
         {
             id_1 = -1;
             id_2 = -1;
@@ -565,13 +545,13 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             {
                 for (k = 0; k < index_array[j]; k++)
                 {
-                    if (arr_3d[j][k][6] != 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 2)
+                    if (arr_3d[j][k][6] != 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
                     {
                         red_points = 1;
                         break;
                     }
 
-                    if (arr_3d[j][k][6] == 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 2)
+                    if (arr_3d[j][k][6] == 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
                     {
                         d = sqrt(pow(0 - arr_3d[j][k][0], 2) + pow(0 - arr_3d[j][k][1], 2));
 
@@ -599,41 +579,68 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         }
 
-        // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE
+        // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE MERŐLEGES TÁVOLSÁGMÉRŐ ALGORITMUSSAL 
 
-        float rdp_marker_array_points[piece][4];
-
+        float simp_marker_array_points[c][4];
+        int count = 1;
+        float epsilon = 0.1;
         
+        for (i = 0; i < 4; i++)
+        {
+            simp_marker_array_points[0][i] = marker_array_points[0][i];
+        }
 
+        for (i = 1; i < c - 1; i++)
+        {
+            float d = perpendicular_distance(marker_array_points[i - 1][0], marker_array_points[i - 1][1], 
+                                             marker_array_points[i + 1][0], marker_array_points[i + 1][1],
+                                             marker_array_points[i][0], marker_array_points[i][1]);
+
+            if (d > epsilon)
+            {
+            simp_marker_array_points[count][0] = marker_array_points[i][0];             
+            simp_marker_array_points[count][1] = marker_array_points[i][1];
+            simp_marker_array_points[count][2] = marker_array_points[i][2];
+            simp_marker_array_points[count][3] = marker_array_points[i][3];
+            count++;
+            }
+        }
+
+        for (i = 0; i < 4; i++)
+        {
+            simp_marker_array_points[count][i] = marker_array_points[c][i];
+        }
+
+        std::cout << count << std::endl;        
 
         // MARKER ÖSSZEÁLLÍTÁSA
 
-        if (c > 2)
+        if (count > 2)
         {
-            if (marker_array_points[0][3] = 0 && marker_array_points[1][3] == 1)
-                marker_array_points[0][3] = 1;
+            if (simp_marker_array_points[0][3] = 0 && simp_marker_array_points[1][3] == 1)
+                simp_marker_array_points[0][3] = 1;
 
-            if (marker_array_points[c - 1][3] == 0 && marker_array_points[c - 2][3] == 1)
-                marker_array_points[c - 1][3] == 1;
+            if (simp_marker_array_points[count - 1][3] == 0 && simp_marker_array_points[count - 2][3] == 1)
+                simp_marker_array_points[count - 1][3] == 1;
 
-            if (marker_array_points[0][3] = 1 && marker_array_points[1][3] == 0)
-                marker_array_points[0][3] = 0;
+            if (simp_marker_array_points[0][3] = 1 && simp_marker_array_points[1][3] == 0)
+                simp_marker_array_points[0][3] = 0;
 
-            if (marker_array_points[c - 1][3] == 1 && marker_array_points[c - 2][3] == 0)
-                marker_array_points[c - 1][3] = 0;
+            if (simp_marker_array_points[count - 1][3] == 1 && simp_marker_array_points[count - 2][3] == 0)
+                simp_marker_array_points[count - 1][3] = 0;
 
 
-            for (i = 2; i <= c - 3; i++)
+            for (i = 2; i <= count - 3; i++)
             {
-                if (marker_array_points[i][3] == 0 && marker_array_points[i - 1][3] == 1 && marker_array_points[i + 1][3] == 1)
-                    marker_array_points[i][3] = 1;
+                if (simp_marker_array_points[i][3] == 0 && simp_marker_array_points[i - 1][3] == 1 && simp_marker_array_points[i + 1][3] == 1)
+                    simp_marker_array_points[i][3] = 1;
             }
 
 
-            for (i = 2; i <= c - 3; i++)
+            for (i = 2; i <= count - 3; i++)
             {
-                if (marker_array_points[i][3] == 1 && marker_array_points[i - 1][3] == 0 && marker_array_points[i + 1][3] == 0)
-                    marker_array_points[i][3] = 0;
+                if (simp_marker_array_points[i][3] == 1 && simp_marker_array_points[i - 1][3] == 0 && simp_marker_array_points[i + 1][3] == 0)
+                    simp_marker_array_points[i][3] = 0;
             }
 
 
@@ -648,11 +655,11 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             line_segment.type = visualization_msgs::Marker::LINE_STRIP;
             line_segment.action = visualization_msgs::Marker::ADD;
 
-            for (i = 0; i < c; i++)
+            for (i = 0; i < count; i++)
             {
-                point.x = marker_array_points[i][0];
-                point.y = marker_array_points[i][1];
-                point.z = marker_array_points[i][2];
+                point.x = simp_marker_array_points[i][0];
+                point.y = simp_marker_array_points[i][1];
+                point.z = simp_marker_array_points[i][2];
             
 
                 if (i == 0)
@@ -660,11 +667,11 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.points.push_back(point);
                 }
 
-                else if (marker_array_points[i][3] == marker_array_points[i - 1][3])
+                else if (simp_marker_array_points[i][3] == simp_marker_array_points[i - 1][3])
                 {
                     line_segment.points.push_back(point);
 
-                    if (i == c - 1)
+                    if (i == count - 1)
                     {
                         line_segment.id = line_segment_id;
 
@@ -681,7 +688,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                         line_segment.scale.y = 0.5;
                         line_segment.scale.z = 0.5;
                     
-                        if (marker_array_points[i][3] == 0)
+                        if (simp_marker_array_points[i][3] == 0)
                         {
                             line_segment.color.a = 1.0;
                             line_segment.color.r = 0.0;
@@ -703,7 +710,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
 
 
-                else if (marker_array_points[i][3] != marker_array_points[i - 1][3] && marker_array_points[i][3] == 0)
+                else if (simp_marker_array_points[i][3] != simp_marker_array_points[i - 1][3] && simp_marker_array_points[i][3] == 0)
                 {
                     line_segment.points.push_back(point);
 
@@ -734,7 +741,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
 
 
-                else if (marker_array_points[i][3] != marker_array_points[i - 1][3] && marker_array_points[i][3] == 1)
+                else if (simp_marker_array_points[i][3] != simp_marker_array_points[i - 1][3] && simp_marker_array_points[i][3] == 1)
                 {
                     line_segment.points.push_back(point);
 
@@ -762,19 +769,19 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     marker_arr.markers.push_back(line_segment);
                     line_segment.points.clear();
                 
-                    point.x = marker_array_points[i - 1][0];
-                    point.y = marker_array_points[i - 1][1];
-                    point.z = marker_array_points[i - 1][2];
+                    point.x = simp_marker_array_points[i - 1][0];
+                    point.y = simp_marker_array_points[i - 1][1];
+                    point.z = simp_marker_array_points[i - 1][2];
                     line_segment.points.push_back(point);
                     
                 
-                    point.x = marker_array_points[i][0];
-                    point.y = marker_array_points[i][1];
-                    point.z = marker_array_points[i][2];
+                    point.x = simp_marker_array_points[i][0];
+                    point.y = simp_marker_array_points[i][1];
+                    point.z = simp_marker_array_points[i][2];
                     line_segment.points.push_back(point);
                 }
 
-                line_segment.lifetime = ros::Duration(0.5);
+                line_segment.lifetime = ros::Duration(0);
             }
 
             line_segment.action = visualization_msgs::Marker::DELETE;
