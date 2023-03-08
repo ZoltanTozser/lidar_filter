@@ -614,93 +614,108 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         std::cout << count << std::endl;     
 
 /*
-
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE LANG ALGORITMUSSAL 
 
         float simp_marker_array_points[c][4];
         int count = 1;
-        float epsilon = 0.00001;
-        int new_start_index;
-        
+        float epsilon = 0.8;
+        int counter = 0;
+
         for (i = 0; i < 4; i++)
         {
             simp_marker_array_points[0][i] = marker_array_points[0][i];
         }
 
-        for (i = 4; i < c - 1; new_start_index + 4)
+        for (i = 4; i <= c - 1; i = i + 4)
         {
+            counter = 0;
 
             for (j = 1; j <= 3; j++)
             {
                 float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
                                                  marker_array_points[i][0], marker_array_points[i][1],
                                                  marker_array_points[i - j][0], marker_array_points[i - j][1]);
-                new_start_index = i - j;
-                
-                if (d > epsilon)
-                    break;
 
-                if (new_start_index == i - 3 && d < epsilon)
+                if (d > epsilon)
+                {
+                    counter++;
+                    break;
+                }
+
+                if (j == 3 && d < epsilon)
                 {
                     simp_marker_array_points[count][0] = marker_array_points[i][0];             
                     simp_marker_array_points[count][1] = marker_array_points[i][1];
                     simp_marker_array_points[count][2] = marker_array_points[i][2];
                     simp_marker_array_points[count][3] = marker_array_points[i][3];
                     count++;
-                    new_start_index = i;
                 }
             }
-        
-            for (j = 2; j <= 3; j++)
+    
+            if (counter == 1)
+            {
+                counter = 2;
+
+                for (j = 2; j <= 3; j++)
+                {
+                    float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
+                                                     marker_array_points[i - 1][0], marker_array_points[i - 1][1],
+                                                     marker_array_points[i - j][0], marker_array_points[i - j][1]);
+
+                    if (d > epsilon)
+                    {
+                        counter++;
+                        break;
+                    }
+
+                    if (j == 3 && d < epsilon)
+                    {
+                        simp_marker_array_points[count][0] = marker_array_points[i - 1][0];             
+                        simp_marker_array_points[count][1] = marker_array_points[i - 1][1];
+                        simp_marker_array_points[count][2] = marker_array_points[i - 1][2];
+                        simp_marker_array_points[count][3] = marker_array_points[i - 1][3];
+                        count++;
+                        i = i - 1;
+                    }
+                }
+            }
+            
+            if (counter == 3)
             {
                 float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
-                                                 marker_array_points[i - 1][0], marker_array_points[i - 1][1],
-                                                 marker_array_points[i - j][0], marker_array_points[i - j][1]);
-                new_start_index = i - j;
-                
-                if (d > epsilon)
-                    break;
+                                                 marker_array_points[i - 2][0], marker_array_points[i - 2][1],
+                                                 marker_array_points[i - 3][0], marker_array_points[i - 3][1]);
 
-                if (new_start_index == i - 3 && d < epsilon)
+                if (d > epsilon)
                 {
-                    simp_marker_array_points[count][0] = marker_array_points[i - 1][0];             
-                    simp_marker_array_points[count][1] = marker_array_points[i - 1][1];
-                    simp_marker_array_points[count][2] = marker_array_points[i - 1][2];
-                    simp_marker_array_points[count][3] = marker_array_points[i - 1][3];
+                    simp_marker_array_points[count][0] = marker_array_points[i - 3][0];             
+                    simp_marker_array_points[count][1] = marker_array_points[i - 3][1];
+                    simp_marker_array_points[count][2] = marker_array_points[i - 3][2];
+                    simp_marker_array_points[count][3] = marker_array_points[i - 3][3];
                     count++;
-                    new_start_index = i - 1;
+                    i = i - 3;
+                }
+
+                if (d < epsilon)
+                {
+                    simp_marker_array_points[count][0] = marker_array_points[i - 2][0];             
+                    simp_marker_array_points[count][1] = marker_array_points[i - 2][1];
+                    simp_marker_array_points[count][2] = marker_array_points[i - 2][2];
+                    simp_marker_array_points[count][3] = marker_array_points[i - 2][3];
+                    count++;
+                    i = i - 2;
                 }
             }
-
-            float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
-                                             marker_array_points[i - 2][0], marker_array_points[i - 2][1],
-                                             marker_array_points[i - 3][0], marker_array_points[i - 3][1]);
-            new_start_index = i - 3;
-            
-            if (d > epsilon)
-                break;
-
-            if (new_start_index == i - 3 && d < epsilon)
-            {
-                    simp_marker_array_points[count][0] = marker_array_points[i - 1][0];             
-                simp_marker_array_points[count][1] = marker_array_points[i - 1][1];
-                simp_marker_array_points[count][2] = marker_array_points[i - 1][2];
-                simp_marker_array_points[count][3] = marker_array_points[i - 1][3];
-                count++;
-                new_start_index = i - 1;
-            }
-  
         }
-                        
+
         for (i = 0; i < 4; i++)
         {
             simp_marker_array_points[count][i] = marker_array_points[c][i];
-        }
-
-        std::cout << count << std::endl;        
-
+        } 
+ 
+        // std::cout << count << std::endl;        
 */
-
+  
         // MARKER ÖSSZEÁLLÍTÁSA
 
         if (count > 2)
