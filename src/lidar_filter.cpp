@@ -578,13 +578,14 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 c++;
             }
         }
-
+        
+/*
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE MERŐLEGES TÁVOLSÁG ALGORITMUSSAL
 
         float simp_marker_array_points[c][4];
         int count = 1;
-        float epsilon = 0.00001;
-        
+        float epsilon = 0.11;
+
         for (i = 0; i < 4; i++)
         {
             simp_marker_array_points[0][i] = marker_array_points[0][i];
@@ -596,6 +597,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                                              marker_array_points[i + 1][0], marker_array_points[i + 1][1],
                                              marker_array_points[i][0], marker_array_points[i][1]);
 
+            
             if (d > epsilon)
             {
             simp_marker_array_points[count][0] = marker_array_points[i][0];             
@@ -610,15 +612,13 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         {
             simp_marker_array_points[count][i] = marker_array_points[c][i];
         }
+*/
 
-        std::cout << count << std::endl;     
-
-/*
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE LANG ALGORITMUSSAL 
 
         float simp_marker_array_points[c][4];
         int count = 1;
-        float epsilon = 0.8;
+        float epsilon = 0.11;
         int counter = 0;
 
         for (i = 0; i < 4; i++)
@@ -712,9 +712,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         {
             simp_marker_array_points[count][i] = marker_array_points[c][i];
         } 
- 
-        // std::cout << count << std::endl;        
-*/
+         
   
         // MARKER ÖSSZEÁLLÍTÁSA
 
