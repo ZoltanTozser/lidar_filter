@@ -578,12 +578,12 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 c++;
             }
         }
-        
+
 /*
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE MERŐLEGES TÁVOLSÁG ALGORITMUSSAL
 
         float simp_marker_array_points[c][4];
-        int count = 1;
+        int count = 0;
         float epsilon = 0.11;
 
         for (i = 0; i < 4; i++)
@@ -591,7 +591,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             simp_marker_array_points[0][i] = marker_array_points[0][i];
         }
 
-        for (i = 1; i < c - 1; i++)
+        for (i = 1; i <= c - 2; i++)
         {
             float d = perpendicular_distance(marker_array_points[i - 1][0], marker_array_points[i - 1][1], 
                                              marker_array_points[i + 1][0], marker_array_points[i + 1][1],
@@ -610,15 +610,17 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         for (i = 0; i < 4; i++)
         {
-            simp_marker_array_points[count][i] = marker_array_points[c][i];
+            simp_marker_array_points[count][i] = marker_array_points[c - 1][i];
         }
+
+        // std::cout << count << std::endl;
 */
 
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE LANG ALGORITMUSSAL 
 
         float simp_marker_array_points[c][4];
-        int count = 1;
-        float epsilon = 0.11;
+        int count = 0;
+        float epsilon = 0.5;
         int counter = 0;
 
         for (i = 0; i < 4; i++)
@@ -710,10 +712,12 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         for (i = 0; i < 4; i++)
         {
-            simp_marker_array_points[count][i] = marker_array_points[c][i];
+            simp_marker_array_points[count][i] = marker_array_points[c - 1][i];
         } 
          
-  
+        std::cout << count << std::endl;
+
+
         // MARKER ÖSSZEÁLLÍTÁSA
 
         if (count > 2)
@@ -882,18 +886,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.points.push_back(point);
                 }
 
-                line_segment.lifetime = ros::Duration(0);
+                line_segment.lifetime = ros::Duration(0.04);
             }
-
-            line_segment.action = visualization_msgs::Marker::DELETE;
-
-            for (int del = line_segment_id; del < ghost_marker; del++)
-            {
-                line_segment.id++;
-                marker_arr.markers.push_back(line_segment);
-            }
-
-            ghost_marker = line_segment_id;
 
             pub_marker_array.publish(marker_arr);
 
