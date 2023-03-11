@@ -1,4 +1,5 @@
 <launch>
+    <node name="rqt_conf_gui" pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen"/>
     <node name="rviz_config" pkg="rviz" type="rviz" args="-d $(find lidar_filter)/config/config.rviz" output="screen"/>
     <node name="lidar_filter" pkg="lidar_filter" type="lidar_filter" output="screen">
     </node>

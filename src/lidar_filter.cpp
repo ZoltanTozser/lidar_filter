@@ -6,29 +6,52 @@
 #include <pcl_ros/point_cloud.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <dynamic_reconfigure/server.h>
+#include <lidar_filter/dynamic_reconfConfig.h>
 
-std::string topic_name = "/left_os1/os1_cloud_node/points";
-std::string fixed_frame = "left_os1/os1_lidar";
 
-float min_x = 0; 
-float max_x = 30;
-float min_y = -10;
-float max_y = 10;
-float min_z = -3;
-float max_z = -1;
+std::string topic_name;
+std::string fixed_frame;
 
 int channels = 64;
 
-float interval = 0.1800;
+float min_x; 
+float max_x;
+float min_y;
+float max_y;
+float min_z;
+float max_z;
 
-int curb_points = 5;
-float curb_height = 0.0500;
-float angle_filter1 = 150;
-float angle_filter2 = 140;
+float interval;
+int curb_points;
+float curb_height;
+float angle_filter1;
+float angle_filter2;
 
-float beam_zone = 30;
+float beam_zone;
 
-int ghost_marker = 0;
+float epsilon;    // Lang algoritmusnál: 0.3 a jó érték. Merőleges távolságmérésnél: 0.1 a jó érték.
+
+
+void params_callback(lidar_filter::dynamic_reconfConfig &config, uint32_t level)
+{
+    fixed_frame = config.fixed_frame;
+    topic_name = config.topic_name;
+    epsilon = config.epsilon;
+    min_x = config.min_x;
+    max_x = config.max_x;
+    min_y = config.min_y;
+    max_y = config.max_y;
+    min_z = config.min_z;
+    max_z = config.max_z;
+    interval = config.interval;
+    curb_points = config.curb_points;
+    curb_height = config.curb_height;
+    angle_filter1 = config.angle_filter1;
+    angle_filter2 = config.angle_filter2;
+    beam_zone = config.beam_zone;
+}
+
 
 ros::Publisher pub_frame;
 ros::Publisher pub_non_road;
@@ -83,6 +106,8 @@ void quicksort(float ***arr_3d, int arc, int piece, int low, int high)
     }
 }
 
+
+// MERŐLEGES TÁVOLSÁGMÉRŐ FÜGGVÉNY
 
 float perpendicular_distance(float ax, float ay, float bx, float by, float point_x, float point_y)
 {
@@ -580,11 +605,10 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         }
 
 /*
-        // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE MERŐLEGES TÁVOLSÁG ALGORITMUSSAL
+        // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE MERŐLEGES TÁVOLSÁGMÉRŐ ALGORITMUSSAL
 
         float simp_marker_array_points[c][4];
         int count = 0;
-        float epsilon = 0.11;
 
         for (i = 0; i < 4; i++)
         {
@@ -614,13 +638,12 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         }
 
         // std::cout << count << std::endl;
-*/
 
+*/
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE LANG ALGORITMUSSAL 
 
         float simp_marker_array_points[c][4];
         int count = 0;
-        float epsilon = 0.5;
         int counter = 0;
 
         for (i = 0; i < 4; i++)
@@ -715,7 +738,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             simp_marker_array_points[count][i] = marker_array_points[c - 1][i];
         } 
          
-        std::cout << count << std::endl;
+        // std::cout << count << std::endl;
 
 
         // MARKER ÖSSZEÁLLÍTÁSA
@@ -918,13 +941,18 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
     filtered_road.header = msg.header;
     pub_road.publish(filtered_road);
     
-
 }
 
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "lidarFilter");
+
+    dynamic_reconfigure::Server<lidar_filter::dynamic_reconfConfig> server;
+    dynamic_reconfigure::Server<lidar_filter::dynamic_reconfConfig>::CallbackType f;
+
+    f = boost::bind(&params_callback, _1, _2);
+    server.setCallback(f);
 
     ros::NodeHandle node;
 
