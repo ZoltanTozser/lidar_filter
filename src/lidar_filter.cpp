@@ -168,18 +168,30 @@ ros::Publisher pub_road;
 ros::Publisher pub_marker_array;
 
 
+// A SZŰRÉST VÉGZŐ FÜGGVÉNY
 void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 {
+    // SEGÉDVÁLTOZÓK A CIKLUSOKHOZ A FÜGGVÉNYBEN.
     int i, j, k, l;
 
+    // EGY PONT TÁROLÁSÁHOZ SZÜKSÉGES 
     pcl::PointXYZ pt;
+    
+    // A VIZSGÁLT TERÜLET PONTJAINAK TÁROLÁSÁHOZ SZÜKSÉGES PONTFELHŐ LÉTREHOZÁSA
     pcl::PointCloud<pcl::PointXYZ> filtered_frame;
+    
+    // NEM ÚT PONTOK PONTJAINAK TÁROLÁSÁHOZ SZÜKSÉGES PONTFELHŐ LÉTREHOZÁSA
     pcl::PointCloud<pcl::PointXYZ> filtered_non_road;
+    
+    // ÚT PONTOK PONTJAINAK TÁROLÁSÁHOZ SZÜKSÉGES PONTFELHŐ LÉTREHOZÁSA
     pcl::PointCloud<pcl::PointXYZ> filtered_road;
 
 
     // VIZSGÁLT PONTOK KERESÉSE ÉS HOZZÁADÁSA A FILTERED_FRAME-HEZ
 
+    // A FOR CIKLUSSAL VÉGIGMEGYÜNK A BEJÖVŐ (MSG) PONTFELHŐN (AZ ÖSSZES PONTON).
+    // AMELYIK PONT MEGFLELEL AZ IF FELTÉTELNEK (AZAZ A FRAME MÉRETEN BELÜL ELHELYZKEDŐ PONTOK)
+    // AZOKAT HOZZÁADJUK A FILTERED_FRAME TOPIC-HOZ (PUSH.BACK()).  
     for (i = 0; i <= msg.size(); i++)
     {
         if (msg.points[i].x >= min_x && msg.points[i].x <= max_x &&
@@ -194,9 +206,11 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
     }
     
-
+    // MEGHATÁROZZUK A PONTOK DARABSZÁMÁT ÉS EGY VÁLTOZÓBAN TÁROLJUK (EZT KÉSŐBB TÖBB HELYEN IS FELHASZNÁLJUK MAJD). 
     int piece = filtered_frame.points.size();
     
+    // FELTÉTELKÉNT MEGADJUK, HOGY LEGALÁBB 40 PONT LEGYEN A FILTERED FRAME-BEN, AZAZ A VIZSGÁLT TERÜLETEN. 
+    // KEVÉS PONTOT VIZSGÁLNI NINCS ÉRTELME. 
     if (piece >= 40)
     {
         // DINAMIKUS 2D TÖMB LÉTREHOZÁSA A PONTOK ÉRTÉKEIHEZ ÉS EGYÉB SZÁMÍTÁSOKHOZ 
@@ -631,42 +645,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         }
 
-/*
-        // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE MERŐLEGES TÁVOLSÁGMÉRŐ ALGORITMUSSAL
 
-        float simp_marker_array_points[c][4];
-        int count = 0;
-
-        for (i = 0; i < 4; i++)
-        {
-            simp_marker_array_points[0][i] = marker_array_points[0][i];
-        }
-
-        for (i = 1; i <= c - 2; i++)
-        {
-            float d = perpendicular_distance(marker_array_points[i - 1][0], marker_array_points[i - 1][1], 
-                                             marker_array_points[i + 1][0], marker_array_points[i + 1][1],
-                                             marker_array_points[i][0], marker_array_points[i][1]);
-
-            
-            if (d > epsilon)
-            {
-            simp_marker_array_points[count][0] = marker_array_points[i][0];             
-            simp_marker_array_points[count][1] = marker_array_points[i][1];
-            simp_marker_array_points[count][2] = marker_array_points[i][2];
-            simp_marker_array_points[count][3] = marker_array_points[i][3];
-            count++;
-            }
-        }
-
-        for (i = 0; i < 4; i++)
-        {
-            simp_marker_array_points[count][i] = marker_array_points[c - 1][i];
-        }
-
-        // std::cout << count << std::endl;
-
-*/
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE LANG ALGORITMUSSAL 
 
         float simp_marker_array_points[c][4];
