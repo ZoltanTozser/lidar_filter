@@ -1,3 +1,5 @@
+// A PROGRAM FUTTATÁSÁHOZ SZÜKSÉGES INCLUDE ÁLLOMÁNYOK. EZEK JAVARÉSZT MATEMATIKAI FÜGGVÉNYEK GYŰJTEMÉNYE, 
+// ROS-HOZ, POINT CLOUD-OK, MARKER-EK, DYNAMIC RECONFIGURE HASZNÁLATÁHOZ SZÜKSÉGES ÁLLOMÁNYOK.   
 #include <iostream>
 #include <cmath>
 #include <math.h>
@@ -10,11 +12,16 @@
 #include <lidar_filter/dynamic_reconfConfig.h>
 
 
+// GLOBÁLIS VÁLTOZÓK
+
+// A TOPIC NÉV (AMIRE FELÍRATKOZUNK) ÉS FIXED FRAME TÁROLÁSÁHOZ SZÜKSÉGES STRING VÁLTOZÓK.
 std::string topic_name;
 std::string fixed_frame;
 
+// AZ ALKALMAZOTT LIDAR CSATORNASZÁMA.
 int channels = 64;
 
+// VIZSGÁLT TERÜLETHEZ SZÜKSÉGES VÁLTOZÓK (X, Y, Z KOORDINÁTA SZERINT A MINIMÁLIS ÉS MAXIMÁLIS KÖZÖTTI RÉSZ).
 float min_x; 
 float max_x;
 float min_y;
@@ -22,17 +29,30 @@ float max_y;
 float min_z;
 float max_z;
 
+// LIDAR VERTIKÁLIS SZÖGFELBONTÁSÁNAK INTERVALLUMA.
 float interval;
+
+// BECSÜLT PONTOK SZÁMA A JÁRDASZEGÉLYEN.
 int curb_points;
+
+// BECSÜLT MINIMÁLIS JÁRDASZEGÉLY MAGASSÁG.
 float curb_height;
+
+// HÁROM PONT ÁLTAL BEZÁRT SZÖG, X = 0 ÉRTÉK MELLETT.
 float angle_filter1;
+
+// KÉT VEKTOR ÁLTAL BEZÁRT SZÖG, Z = 0 ÉRTÉK MELLETT.
 float angle_filter2;
 
+// VIZSGÁLT SUGÁRZÓNA MÉRETE.
 float beam_zone;
 
-float epsilon;    // Lang algoritmusnál: 0.3 a jó érték. Merőleges távolságmérésnél: 0.1 a jó érték.
+// MERŐLEGES TÁVOLSÁGMÉRÉSHEZ SZÜKSÉGES KÜSZÖBÉRTÉK (LANG ALGORITMUSNÁL A MEGFELEŐ ÉRTÉK: 0.3). 
+float epsilon;
 
 
+// PARAMÉTEREK BEÁLLÍTÁSÁHOZ SZÜKSÉGES FÜGGVÉNY 
+// (AZ ÉRTÉKEKET A CFG KÖNYVTÁRBAN TALÁLHATÓ DYNAMIC_RECONF.CFG NEVŰ FÁJLBÓL VESZI).
 void params_callback(lidar_filter::dynamic_reconfConfig &config, uint32_t level)
 {
     fixed_frame = config.fixed_frame;
@@ -51,12 +71,6 @@ void params_callback(lidar_filter::dynamic_reconfConfig &config, uint32_t level)
     angle_filter2 = config.angle_filter2;
     beam_zone = config.beam_zone;
 }
-
-
-ros::Publisher pub_frame;
-ros::Publisher pub_non_road;
-ros::Publisher pub_road;
-ros::Publisher pub_marker_array;
 
  
 // GYORSRENDEZŐ SEGÉDFÜGGVÉNYEK 
@@ -114,8 +128,7 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
     float dx = bx - ax;
     float dy = by - ay;
 
-    // Normalizálás
-
+    // NORMALIZÁLÁS
     float mag = sqrt(pow(dx, 2) + pow(dy, 2));
     
     if (mag > 0.0)
@@ -129,8 +142,7 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
 
     float pv_dot = dx * pv_x + dy * pv_y;
 
-    // Léptékvonal irányvektor
-
+    // LÉPTÉKVOLNAL IRÁNYVEKTOR
     float ds_x = pv_x * dx;
     float ds_y = pv_y * dy;
 
@@ -139,6 +151,21 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
 
     return sqrt(pow(a_x, 2) + pow(a_y, 2));
 }
+
+
+// PUBLISHER-EK LÉTREHOZÁSA
+
+// A VIZSGÁLT TERÜLET PONTJAI (FRAME)
+ros::Publisher pub_frame;
+
+// NEM ÚT PONTOK 
+ros::Publisher pub_non_road;
+
+// ÚT PONTOK
+ros::Publisher pub_road;
+
+// MARKER ARRAY 
+ros::Publisher pub_marker_array;
 
 
 void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
