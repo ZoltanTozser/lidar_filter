@@ -1,5 +1,5 @@
-// A PROGRAM FUTTATÁSÁHOZ SZÜKSÉGES INCLUDE ÁLLOMÁNYOK. EZEK JAVARÉSZT MATEMATIKAI FÜGGVÉNYEK GYŰJTEMÉNYE, 
-// ROS-HOZ, POINT CLOUD-OK, MARKER-EK, DYNAMIC RECONFIGURE HASZNÁLATÁHOZ SZÜKSÉGES ÁLLOMÁNYOK.   
+// A program futtatásához azükséges include állományok. Ezek javarészt matematikai függvények gyűjteménye, 
+// ROS-hoz, pointcloud-ok, marker-ek, dynamic reconfigure használatához szükséges állományok.   
 #include <iostream>
 #include <cmath>
 #include <math.h>
@@ -14,14 +14,14 @@
 
 // GLOBÁLIS VÁLTOZÓK
 
-// A TOPIC NÉV (AMIRE FELÍRATKOZUNK) ÉS FIXED FRAME TÁROLÁSÁHOZ SZÜKSÉGES STRING VÁLTOZÓK.
+// A topic név (amire felíratkozunk) és fixed frame tárolásához szükséges string változók.
 std::string topic_name;
 std::string fixed_frame;
 
-// AZ ALKALMAZOTT LIDAR CSATORNASZÁMA.
+// Az alkalmazott LIDAR csatornaszáma.
 int channels = 64;
 
-// VIZSGÁLT TERÜLETHEZ SZÜKSÉGES VÁLTOZÓK (X, Y, Z KOORDINÁTA SZERINT A MINIMÁLIS ÉS MAXIMÁLIS KÖZÖTTI RÉSZ).
+// A vizsgált területhez szükséges változók (X, Y, Z koordináta szerint a minimális és maximális közötti rész).
 float min_x; 
 float max_x;
 float min_y;
@@ -29,30 +29,31 @@ float max_y;
 float min_z;
 float max_z;
 
-// LIDAR VERTIKÁLIS SZÖGFELBONTÁSÁNAK INTERVALLUMA.
+// A LIDAR vertikális szögfelbontásának intervalluma.
 float interval;
 
-// BECSÜLT PONTOK SZÁMA A JÁRDASZEGÉLYEN.
+// A becsült pontok száma a járdaszegélyen.
 int curb_points;
 
-// BECSÜLT MINIMÁLIS JÁRDASZEGÉLY MAGASSÁG.
+// A becsült minimális járdaszegély magasság.
 float curb_height;
 
-// HÁROM PONT ÁLTAL BEZÁRT SZÖG, X = 0 ÉRTÉK MELLETT.
+// Három pont által bezárt szög, X = 0 érték mellett.
 float angle_filter1;
 
-// KÉT VEKTOR ÁLTAL BEZÁRT SZÖG, Z = 0 ÉRTÉK MELLETT.
+// Két vektor által bezárt szög, Z = 0 érték mellett.
 float angle_filter2;
 
-// VIZSGÁLT SUGÁRZÓNA MÉRETE.
+// A vizsgált sugárzóna mérete.
 float beam_zone;
 
-// MERŐLEGES TÁVOLSÁGMÉRÉSHEZ SZÜKSÉGES KÜSZÖBÉRTÉK (LANG ALGORITMUSNÁL A MEGFELEŐ ÉRTÉK: 0.3). 
+// Merőleges távolságméréshez szükséges küszöbérték (Lang algoritmusnál a megfelelő érték: 0.3). 
 float epsilon;
 
 
-// PARAMÉTEREK BEÁLLÍTÁSÁHOZ SZÜKSÉGES FÜGGVÉNY 
-// (AZ ÉRTÉKEKET A CFG KÖNYVTÁRBAN TALÁLHATÓ DYNAMIC_RECONF.CFG NEVŰ FÁJLBÓL VESZI).
+// PARAMÉTEREK BEÁLLÍTÁSÁHOZ SZÜKSÉGES FÜGGVÉNY
+
+// (Az értékeket a cfg könyvtárban található dynamic_reconf.cfg nevű fájlból veszi).
 void params_callback(lidar_filter::dynamic_reconfConfig &config, uint32_t level)
 {
     fixed_frame = config.fixed_frame;
@@ -128,7 +129,7 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
     float dx = bx - ax;
     float dy = by - ay;
 
-    // NORMALIZÁLÁS
+    // Normalizálás
     float mag = sqrt(pow(dx, 2) + pow(dy, 2));
     
     if (mag > 0.0)
@@ -142,7 +143,7 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
 
     float pv_dot = dx * pv_x + dy * pv_y;
 
-    // LÉPTÉKVOLNAL IRÁNYVEKTOR
+    // Léptékvonal irányvektor
     float ds_x = pv_x * dx;
     float ds_y = pv_y * dy;
 
@@ -155,43 +156,44 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
 
 // PUBLISHER-EK LÉTREHOZÁSA
 
-// A VIZSGÁLT TERÜLET PONTJAI (FRAME)
+// A vizsgált terület pontjai (Frame)
 ros::Publisher pub_frame;
 
-// NEM ÚT PONTOK 
+// Nem út pontok 
 ros::Publisher pub_non_road;
 
-// ÚT PONTOK
+// Út pontok
 ros::Publisher pub_road;
 
-// MARKER ARRAY 
+// Marker array 
 ros::Publisher pub_marker_array;
 
 
 // A SZŰRÉST VÉGZŐ FÜGGVÉNY
+
 void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 {
-    // SEGÉDVÁLTOZÓK A CIKLUSOKHOZ A FÜGGVÉNYBEN.
+    // Segédváltozók a ciklusokhoz a függvényben.
     int i, j, k, l;
 
-    // EGY PONT TÁROLÁSÁHOZ SZÜKSÉGES 
+    // Egy pont tárolásához szükséges. 
     pcl::PointXYZ pt;
     
-    // A VIZSGÁLT TERÜLET PONTJAINAK TÁROLÁSÁHOZ SZÜKSÉGES PONTFELHŐ LÉTREHOZÁSA
+    // A vizsgált terület pontjainak tárolásához szükséges pontfelhő létrehozása.
     pcl::PointCloud<pcl::PointXYZ> filtered_frame;
     
-    // NEM ÚT PONTOK PONTJAINAK TÁROLÁSÁHOZ SZÜKSÉGES PONTFELHŐ LÉTREHOZÁSA
+    // Nem út pontok tárolásához szükséges pontfelhő létrehozása.
     pcl::PointCloud<pcl::PointXYZ> filtered_non_road;
     
-    // ÚT PONTOK PONTJAINAK TÁROLÁSÁHOZ SZÜKSÉGES PONTFELHŐ LÉTREHOZÁSA
+    // Út pontok tárolásához szükséges pontfelhő létrehozása.
     pcl::PointCloud<pcl::PointXYZ> filtered_road;
 
 
     // VIZSGÁLT PONTOK KERESÉSE ÉS HOZZÁADÁSA A FILTERED_FRAME-HEZ
 
-    // A FOR CIKLUSSAL VÉGIGMEGYÜNK A BEJÖVŐ (MSG) PONTFELHŐN (AZ ÖSSZES PONTON).
-    // AMELYIK PONT MEGFLELEL AZ IF FELTÉTELNEK (AZAZ A FRAME MÉRETEN BELÜL ELHELYZKEDŐ PONTOK)
-    // AZOKAT HOZZÁADJUK A FILTERED_FRAME TOPIC-HOZ (PUSH.BACK()).  
+    // A for ciklussal végigmegyünk a bejövő (msg) pontfelhőn (az összes ponton).
+    // Amelyik pont megfelel az if feltételnek (azaz a frame méreten belül elhelyezkedő pontok),
+    // azokat hozzáadjuk a filtered_frame topic-hoz (push.back()).  
     for (i = 0; i <= msg.size(); i++)
     {
         if (msg.points[i].x >= min_x && msg.points[i].x <= max_x &&
@@ -206,15 +208,18 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
     }
     
-    // MEGHATÁROZZUK A PONTOK DARABSZÁMÁT ÉS EGY VÁLTOZÓBAN TÁROLJUK (EZT KÉSŐBB TÖBB HELYEN IS FELHASZNÁLJUK MAJD). 
+    // Meghatározzuk a pontok darabszámát és egy változóban tároljuk (ezt később több helyen is felhasználjuk majd). 
     int piece = filtered_frame.points.size();
     
-    // FELTÉTELKÉNT MEGADJUK, HOGY LEGALÁBB 40 PONT LEGYEN A FILTERED FRAME-BEN, AZAZ A VIZSGÁLT TERÜLETEN. 
-    // KEVÉS PONTOT VIZSGÁLNI NINCS ÉRTELME. 
+    // Feltételként megadjuk, hogy legalább 40 pont legyen a filtered_frame-ben, azaz a vizsgált területen. 
+    // Kevés pontot vizsgálni nincs értelme. 
     if (piece >= 40)
     {
-        // DINAMIKUS 2D TÖMB LÉTREHOZÁSA A PONTOK ÉRTÉKEIHEZ ÉS EGYÉB SZÁMÍTÁSOKHOZ 
-        
+        // DINAMIKUS 2D TÖMB LÉTREHOZÁSA A PONTOK ÉRTÉKEIHEZ ÉS EGYÉB SZÁMÍTÁSOKHOZ
+
+        // 0. oszlop tárolja a pontok X értékét, 1. oszlop tárolja a pontok Y értékét, 
+        // 2. oszlop tárolja a pontok Z értékét, 3. oszlop tárolja a pont és az origótól vett távolságot (D),
+        // 4. oszlop tárolja a pontok szögfelbontását (Alfa).
         float **arr_2d = new float*[piece]();
         
         for (i = 0; i < piece; i++)
@@ -222,16 +227,23 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             arr_2d[i] = new float[5];
         }
     
-        // 2D TÖMB FELTÖLTÉSE ADATOKKAL
+        // DINAMIKUS 2D TÖMB FELTÖLTÉSE ADATOKKAL
 
+        // A szögfüggvényeknél a részeredmények tárolásához szükséges változó.
         float part_result;
 
+        // Egy tömb, amiben eltároljuk a különböző szögfelbontásokat. Ez megegyezik a LIDAR csatornaszámával. 
+        // A tömböt feltöltjük nulla értékekkel. 
         float angle[channels] = {0};
         
+        // A szögfelbontásokat tároló tömb feltöltéséhez szükséges változó. 
         int index = 0;
 
+        // Az adott szög új körvonalhoz tartozik vagy sem segédváltozója?
         int new_circle;
 
+        // Végigmegyünk az összes ponton és feltöltjük az értékekkel a tömb oszlopait (X, Y, Z).
+        // Kiszámítjuk az origótól vett távolságát (D) és a szögfelbontását (Alfa). 
         for (i = 0; i < piece; i++)
         {
             arr_2d[i][0] = filtered_frame.points[i].x;
@@ -241,20 +253,24 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             arr_2d[i][3] = sqrt(pow(arr_2d[i][0], 2) + pow(arr_2d[i][1], 2) + pow(arr_2d[i][2], 2));
             
             part_result = abs(arr_2d[i][2]) / arr_2d[i][3];
-                
+
+            // Kerekítési problémák miatt szükségesek az alábbi sorok.    
             if (part_result < -1)
                 part_result = -1;
 
-            if (part_result > 1)
+            else if (part_result > 1)
                 part_result = 1;
 
+            // Ha a Z értéke kisebb nullánál, akkor koszinusz függvényt kell alkalmazni. 
             if (arr_2d[i][2] < 0)  
                 arr_2d[i][4] = acos(part_result) * 180 / M_PI;
-                
+
+            // Ha a Z értéke nagyobb vagy egyenlő nullánál, akkor pedig szinusz függvényt kell alkalmazni.     
             else if (arr_2d[i][2] >= 0)
                 arr_2d[i][4] = (asin(part_result) * 180 / M_PI) + 90;
                 
 
+            // Az alapvetés az, hogy az adott szög új körvonalhoz tartozik. 
             new_circle = 1;
 
             for (j = 0; j < channels; j++)
@@ -262,6 +278,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 if (angle[j] == 0)
                 break;
 
+                // Ha már korábban volt ilyen érték (egy meghatározott intervallumon belül), akkor ez nem egy új körív.
+                // A new_Circle-be így nulla kerül és break-kel kilépünk a folyamatból. 
                 if (abs(angle[j] - arr_2d[i][4]) <= interval)
                 {
                     new_circle = 0;
@@ -269,8 +287,11 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }             
 
+            // Amennyiben nem szerepel még a tömbben ilyen érték, akkor az egy új körívet jelent. 
             if (new_circle == 1)
             {
+                // Ha több körív keletkezne, mint 64 valamilyen okból kifolyólag, akkor hiba keletkezne. 
+                // Az alábbi feltétel ezt kezeli le.  
                 if(index < channels)
                 {
                     angle[index] = arr_2d[i][4];
@@ -279,11 +300,17 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         } 
 
+        // A sort függvénnyel növekvő sorrendbe rendezzük a szögfelbontásokat. 
         std::sort(angle, angle + index);
 
 
         // DINAMIKUS 3D TÖMB LÉTREHOZÁSA A PONTOK ÉRTÉKEIHEZ ÉS EGYÉB SZÁMÍTÁSOKHOZ 
 
+        // 0. oszlop tárolja a pontok X értékét, 1. oszlop tárolja a pontok Y értékét, 
+        // 2. oszlop tárolja a pontok Z értékét, 3. oszlop tárolja a pont és az origótól vett távolságot, de itt Z = 0 értékkel (D),
+        // 4. oszlop tárolja a pontok helyzetét egy körben (360 fok) (Alfa), 
+        // 5. oszlop tárolja X = 0 érték mellett az új Y koordinátákat (új Y), 
+        // 6. oszlop tárolja a csoportszámokat, ami lehet 1 (út pontot jelent), vagy 2 (nem út pontot jelent).
         float ***arr_3d = new float**[channels]();
  
         for (i = 0; i < channels; i++)
@@ -296,19 +323,25 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         }
 
+        // DINAMIKUS 3D TÖMB FELTÖLTÉSE ADATOKKAL
 
-        // 3D TÖMB FELTÖLTÉSE ADATOKKAL
-
+        // Az adott köríveket tartalmazó csoportok (channels), megfelelő sorindexeinek beállításához szükséges tömb.
+        // Nulla értékkel fel kell tölteni. 
         int index_array[channels] = {0};
 
+        // Egy tömb, ami tárolja az adott köríven a legnagyobb távolságra lévő pont értékét az origótól.
+        // Tehát minden köríven egy pont értékét tárolja a tömbben.   
         float max_distance[channels] = {0};
 
+        // Hibás LIDAR csatornaszám esetén szükséges változó.
         int results;
         
+        // Végigmegyünk az összes ponton a for ciklussal. 
         for (i = 0; i < piece; i++)
         {
             results = 0;
 
+            // Kiválasszuk a megfelelő körívet. 
             for (j = 0; j < index; j++)
             {
                 if (abs(angle[j] - arr_2d[i][4]) <= interval)
@@ -320,14 +353,18 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
             if (results == 1)
             {
+                // A 2D tömbből hozzáadjuk az X, Y, Z koordináta értékeit a 3D tömbhöz (a megfelelő körívhez). 
                 arr_3d[j][index_array[j]][0] = arr_2d[i][0];
                 arr_3d[j][index_array[j]][1] = arr_2d[i][1];
                 arr_3d[j][index_array[j]][2] = arr_2d[i][2];
 
+                // A 2D tömbből kiszámítjuk az origótól vett távolságát, de itt csak az X és Y értéket adjuk hozzá. 
                 arr_3d[j][index_array[j]][3] = sqrt(pow(arr_2d[i][0], 2) + pow(arr_2d[i][1], 2));
 
+                // Minden pontnak van egy szöge 360 fokban. Az adott pont helyzete egy körben. 
                 part_result = (abs(arr_3d[j][index_array[j]][0])) / arr_3d[j][index_array[j]][3];
             
+                // Kerekítési problémák miatt szükségesek az alábbi sorok.    
                 if (part_result < -1)
                     part_result = -1;
 
@@ -346,6 +383,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 else
                     arr_3d[j][index_array[j]][4] = 360 - (asin(part_result) * 180 / M_PI);
             
+                // Vizsgálja, hogy az adott köríven az origótól a legnagyobb távolságra van-e a pont. 
+                // Ha igen, akkor annak értékét elmenti.  
                 if (arr_3d[j][index_array[j]][3] > max_distance[j])
                     max_distance[j] = arr_3d[j][index_array[j]][3];
 
