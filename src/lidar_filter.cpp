@@ -291,7 +291,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             if (new_circle == 1)
             {
                 // Ha több körív keletkezne, mint 64 valamilyen okból kifolyólag, akkor hiba keletkezne. 
-                // Az alábbi feltétel ezt kezeli le.  
+                // Az alábbi feltétel ezt kezeli le, illetve eltároljuk a különböző szögfelbontásokat.   
                 if(index < channels)
                 {
                     angle[index] = arr_2d[i][4];
@@ -308,7 +308,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         // 0. oszlop tárolja a pontok X értékét, 1. oszlop tárolja a pontok Y értékét, 
         // 2. oszlop tárolja a pontok Z értékét, 3. oszlop tárolja a pont és az origótól vett távolságot, de itt Z = 0 értékkel (D),
-        // 4. oszlop tárolja a pontok helyzetét egy körben (360 fok) (Alfa), 
+        // 4. oszlop tárolja a pontok helyzetét egy körben (forgásszög számítása) (Alfa), 
         // 5. oszlop tárolja X = 0 érték mellett az új Y koordinátákat (új Y), 
         // 6. oszlop tárolja a csoportszámokat, ami lehet 1 (út pontot jelent), vagy 2 (nem út pontot jelent).
         float ***arr_3d = new float**[channels]();
