@@ -371,15 +371,19 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 else if (part_result > 1)
                     part_result > 1;
 
+                // A pont a kör I. negyedében található
                 if (arr_3d[j][index_array[j]][0] >= 0 && arr_3d[j][index_array[j]][1] <= 0)
                     arr_3d[j][index_array[j]][4] = asin(part_result) * 180 / M_PI;
 
+                // A pont a kör II. negyedében található
                 else if (arr_3d[j][index_array[j]][0] >= 0 && arr_3d[j][index_array[j]][1] > 0)
                     arr_3d[j][index_array[j]][4] = 180 - (asin(part_result) * 180 / M_PI);
-            
+
+                // A pont a kör III. negyedében található
                 else if (arr_3d[j][index_array[j]][0] < 0 && 0 && arr_3d[j][index_array[j]][1] >= 0)
                     arr_3d[j][index_array[j]][4] = 180 + (asin(part_result) * 180 / M_PI);
-            
+
+                // A pont a kör IV. negyedében található
                 else
                     arr_3d[j][index_array[j]][4] = 360 - (asin(part_result) * 180 / M_PI);
             
@@ -404,33 +408,50 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         
         // NEM ÚT PONTOK SZŰRÉSE
 
+        // A három vizsgált pontból a második és a harmadik pont segédváltozója. 
         int point_2, point_3;
-        float alpha; 
-        float x1, x2, x3;
-        float va1, va2, vb1, vb2;
-        float max1, max2; 
+
+        // A két szélső pont közötti távolság. A LIDAR forgása és a körív szakadások miatt. 
         float d;
 
+        // A három pont által bezárt háromszög oldalainak hossza. 
+        float x1, x2, x3;
+
+        // A három pont és a két vektor által bezárt szög. 
+        float alpha; 
+
+        // A két vektor változói. 
+        float va1, va2, vb1, vb2;
+
+        // A magasságot is kell vizsgálni nem csak a szöget. 
+        float max1, max2; 
+
+        // Végig iterálunk az összes körön.
         for ( i = 0; i < index; i++)
         {
             // FILTER 1
 
+            // Feltöltjük új Y értékekkel a 6. oszlopot, X = 0 érték mellett. 
             for (j = 1; j < index_array[i]; j++)
             {
                 arr_3d[i][j][5] = arr_3d[i][j-1][5] + 0.0100;
             }
 
+            // A adott kör pontjainak vizsgálata. 
             for (j = curb_points; j <= (index_array[i] - 1) - curb_points; j++)
             {
                 point_2 = j + curb_points / 2;
                 point_3 = j + curb_points;
 
+                // Kiszámoljuk a két szélső pont közötti távolságot. 
                 d = sqrt(
                     pow(arr_3d[i][point_3][0] - arr_3d[i][j][0], 2) + 
                     pow(arr_3d[i][point_3][1] - arr_3d[i][j][1], 2));
                 
+                // Feltételhez kötjük, hogy a két szélsző pont közötti távolság kissebbnek kell lenni 5 méternél. 
                 if (d < 5.0000)
                 {
+                    // Meghatározzuk a három pont által bezárt háromszög oldalainak hosszát (x1, x2, x3).
                     x1 = sqrt(
                         pow(arr_3d[i][point_2][5] - arr_3d[i][j][5], 2) + 
                         pow(arr_3d[i][point_2][2] - arr_3d[i][j][2], 2));
@@ -445,13 +466,16 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     
                     part_result = (pow(x3, 2) - pow(x1, 2) - pow(x2, 2)) / (-2 * x1 * x2);
                     
+                    // Kerekítési problémák miatt szükségesek az alábbi sorok.
                     if (part_result < -1)
                         part_result = -1;
                     else if (part_result > 1)
                         part_result = 1;
 
+                    // Kiszámítjuk a három pont és a két vektor által bezárt szöget. 
                     alpha = acos(part_result) * 180 / M_PI;
 
+                    // Ha a feltétel teljesül, akkor a 7. oszlopba 2-es szám kerül, azaz nem út pont. 
                     if (alpha <= angle_filter1 && 
                     (abs(arr_3d[i][j][2] - arr_3d[i][point_2][2]) >= curb_height ||
                     abs(arr_3d[i][point_3][2] - arr_3d[i][point_2][2]) >= curb_height) &&
