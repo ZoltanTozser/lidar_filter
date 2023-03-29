@@ -431,13 +431,13 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         {
             // FILTER 1
 
-            // Feltöltjük új Y értékekkel a 6. oszlopot, X = 0 érték mellett. 
+            // Feltöltjük új Y értékekkel a 6. oszlopot. 
             for (j = 1; j < index_array[i]; j++)
             {
                 arr_3d[i][j][5] = arr_3d[i][j-1][5] + 0.0100;
             }
 
-            // A adott kör pontjainak vizsgálata. 
+            // A adott kör pontjainak vizsgálata, X = 0 érték mellett.  
             for (j = curb_points; j <= (index_array[i] - 1) - curb_points; j++)
             {
                 point_2 = j + curb_points / 2;
@@ -489,19 +489,24 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
             // FILTER 2
 
+            // A adott kör pontjainak vizsgálata. Z = 0 érték mellett. 
             for (j = curb_points; j <= (index_array[i] - 1) - curb_points; j++)
             {
+                // Kiszámoljuk a két vektor szélső pont közötti távolságot. 
                 d = sqrt(
                     pow(arr_3d[i][j + curb_points][0] - arr_3d[i][j - curb_points][0], 2) +
                     pow(arr_3d[i][j + curb_points][1] - arr_3d[i][j - curb_points][1], 2));
                 
+                // Feltételhez kötjük, hogy a két vektor szélsző pont közötti távolság kissebbnek kell lenni 5 méternél. 
                 if (d < 5.0000)
                 {
+                    // Kezdeti értékek beállítása. A max változókba bekerül Z abszolút értéke.
                     max1 = abs(arr_3d[i][j][2]);
                     max2 = abs(arr_3d[i][j][2]);
                     va1 = 0, va2 = 0;
                     vb1 = 0, vb2 = 0;
 
+                    // Az 'a' vektor és a legnagyobb magasság meghatározása. 
                     for (k = j - 1;k >= j - curb_points; k--)
                     {
                         va1 = va1 + arr_3d[i][k][0] - arr_3d[i][j][0];
@@ -511,6 +516,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                             max1 = abs(arr_3d[i][k][2]);
                     }
 
+                    // A 'b' vektor és a legnagyobb magasság meghatározása.
                     for (k = j + 1;k <= j + curb_points; k++)
                     {
                         vb1 = vb1 + arr_3d[i][k][0] - arr_3d[i][j][0];
@@ -527,14 +533,20 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
                     part_result = (va1 * vb1 + vb1 * vb2) / (sqrt(pow(va1, 2) + pow(va2, 2)) * sqrt(pow(vb1, 2) + pow(vb2, 2)));
 
+                    // Kerekítési problémák miatt szükségesek az alábbi sorok.
                     if (part_result < - 1)
                         part_result = -1;
                     
                     if (part_result > 1)
                         part_result = 1;
                     
+                    // Kiszámítjuk a két vektor által bezárt szöget. 
                     alpha = acos(part_result) * 180 / M_PI;
 
+                    // Ha a feltétel teljesül, akkor a 7. oszlopba 2-es szám kerül, azaz nem út pont. 
+                    // Ha a szög kisebb vagy egyenlő mint a beállított érték (alapesetben ez 140 fok) és
+                    // a beállított küszöbértéktől (alapesetben ez 5cm) nagyobb vagy egyenlő Z értéke és
+                    // a max1, max2 különbsége (abszolút értékben) nagyobb vagy egyenlő mint 0.05
                     if (alpha <= angle_filter2 && 
                         (max1 - abs(arr_3d[i][j][2]) >= curb_height ||
                          max2 - abs(arr_3d[i][j][2]) >= curb_height) && 
@@ -625,7 +637,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         }
 
         
-        // A CSOPORTOK FELTÖLTÉSE
+        // A TOPIC-OK FELTÖLTÉSE
 
         for (i = 0; i < index; i++)
         {
