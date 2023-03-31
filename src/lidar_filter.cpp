@@ -561,26 +561,37 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         // ÚT PONTOK SZŰRÉSE
 
+        // A tömb elemeinek gyorsrendezése körönként a szögeknek megfelelő növekvő sorrendben. 
         for (i = 0; i < index; i++)
         {
             quicksort(arr_3d, i, piece, 0, index_array[i] - 1);
         }
 
-
+        // A körív mérete a megadott foknál. Minden körön ugyanakkor körív méretet kell vizsgálni. 
         float arc_distance;
+
+        // Amennyiben az adott köríven, az adott szakaszon található magaspont, 
+        // akkor 1-es értéket vesz fel a változó, egyébként nullát. 
         int not_road;
+
+        // Az aktuális köríven a szög nagysága. 
         float current_degree;
 
+        // A körív méret meghatározása. ((sugár * PI) / 180) * vizsgált sugárzóna mérettel).
         arc_distance = ((max_distance[0] * M_PI) / 180) * beam_zone;
 
+        // 0 foktól 360 fok - beam_zone-ig vizsgáljuk a ciklussal. 
         for (i = 0; i <= 360 - beam_zone; i++)
         {   
+            // Azt veszük alapul, hogy az adott szakaszon nincs magaspont. 
             not_road = 0;
 
+            // Az első kör adott szakaszának vizsgálata. 
             for (j = 0; arr_3d[0][j][4] <= i + beam_zone && j < index_array[0]; j++)
             {
                 if (arr_3d[0][j][4] >= i)
                 {
+                    // Nem vizsgáljuk tovább az adott szakaszt (break), mivel találtunk benne magaspontot. 
                     if (arr_3d[0][j][6] == 2)
                     {
                         not_road = 1;
@@ -589,8 +600,10 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
 
+            // Amennyiben nem találtunk az első kör adott szakaszán magaspontot, akkor továbblépünk a következő körre. 
             if (not_road == 0)
             {
+                // Az első kör szakaszát elfogadjuk, az adott pont tömb 7. oszlopába 1-es szám kerül, azaz út pont. 
                 for (j = 0; arr_3d[0][j][4] <= i + beam_zone && j < index_array[0]; j++)
                 {
                     if (arr_3d[0][j][4] >= i)
@@ -599,8 +612,10 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     }
                 }
 
+                // További körök vizsgálata. 
                 for (k = 1; k < index; k++)
                 {
+                    // Új szöget kell meghatározni, hogy a távolabbi körvonalakon is ugyanakkora körív hosszt vizsgáljunk. 
                     if (i == 360 - beam_zone)
                     {
                         current_degree = 360;
@@ -610,10 +625,12 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                         current_degree = i + arc_distance / ((max_distance[k] * M_PI) / 180);
                     }
 
+                    // Az új kör pontjait vizsgáljuk. 
                     for (l = 0; arr_3d[k][l][4] <= current_degree && l < index_array[k]; l++)
                     {
                         if (arr_3d[k][l][4] >= i)
                         {
+                            // Nem vizsgáljuk tovább az adott szakaszt (break), mivel találtunk benne magaspontot. 
                             if (arr_3d[k][l][6] == 2)
                             {
                                 not_road = 1;
@@ -622,9 +639,11 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                         }
                     }
 
+                    // Ha a sugár elakadt egy magasponton, akkor a többi kört nem vizsgáljuk (break). 
                     if (not_road == 1)
                         break;
                     
+                    // Az adott kör szakaszát elfogadjuk, az adott pont tömb 7. oszlopába 1-es szám kerül, azaz út pont. 
                     for (l = 0; arr_3d[k][l][4] <= current_degree && l < index_array[k]; l++)
                     {
                         if (arr_3d[k][l][4] >= i)
@@ -636,15 +655,17 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         }
 
-        
+
         // A TOPIC-OK FELTÖLTÉSE
 
+        // Végig iterálunk az összes körön.
         for (i = 0; i < index; i++)
         {
+            // Végig iterálunk a köríven található összes ponton.
             for (j = 0; j < index_array[i]; j++)
             {
-                // NEM ÚT PONTOK
-                
+                // Nem út pontok hozzáadása a filtered_non_road-hoz,
+                // amennyiben a tömb 7. oszlopában 2-es szám van. 
                 if (arr_3d[i][j][6] == 2)
                 {
                     pt.x = arr_3d[i][j][0];
@@ -653,8 +674,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     filtered_non_road.push_back(pt);
                 }
 
-                // ÚT PONTOK
-                
+                // Út pontok hozzáadása a filtered_road-hoz,
+                // amennyiben a tömb 7. oszlopában 2-es szám van. 
                 else if (arr_3d[i][j][6] == 1)
                 {
                     pt.x = arr_3d[i][j][0];
@@ -681,7 +702,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             max_distance_road = 0;
             red_points = 0;
         
-
             for (j = 0; j < index; j++)
             {
                 for (k = 0; k < index_array[j]; k++)
@@ -708,7 +728,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 if (red_points == 1)
                     break;
             }
-
 
             if (id_1 != -1 && id_2 != -1)
             {
