@@ -330,7 +330,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         int index_array[channels] = {0};
 
         // Egy tömb, ami tárolja az adott köríven a legnagyobb távolságra lévő pont értékét az origótól.
-        // Tehát minden köríven egy pont értékét tárolja a tömbben.   
+        // Tehát minden köríven egy pont értékét tárolja a tömbben. Nulla értékkel fel kell tölteni.  
         float max_distance[channels] = {0};
 
         // Hibás LIDAR csatornaszám esetén szükséges változó.
@@ -687,35 +687,56 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         }
     
 
-        // LEGTÁVOLABBI ÚT PONT KERESÉSE ADOTT FOKBAN (MARKER PONTOK)
+        // LEGTÁVOLABBI ÚT PONT KERESÉSE ADOTT FOKBAN (MARKER PONTOK KERESÉSE)
 
+        // Két dimenziós tömb létrehozása. A tömb első három oszlopa tartalmazza az adott pont X, Y, Z koordinátáját.
+        // A negyedik oszlop 0-ás, vagy 1-es értéket vesz fel. Ha az adott fokban találunk nem út pontot, akkor
+        // 1-es értéket kap, ha nem találunk, akkor pedig 0-ás értéket kap. 
         float marker_array_points[piece][4];
+
+        // Adott fokban a legtávolabbi út pont (zöld pont) távolságát tárolja a változó. 
         float max_distance_road;
+
+        // A markerek feltöltéséhez szükséges segédváltozó. 
         int c = 0;
+
+        // Az adott pont azonosításához szükséges változók. Az id_1 jelenti a körvonal azonosítását (melyik).
+        // Az id_2 jelenti a korvonalon elhelyezkedő pont azonosítását (hanyadik a körvonalon). 
         int id_1, id_2;
+
+        // A vizsgált sávban van-e magaspont, vagy olyan pont, amit nem jelölt a program se útnak, se magaspontnak. 
         int red_points;
 
+        // A for ciklussal megvizsgáljuk a pontokat fokonként (0 foktól egészen 360 fokig). 
         for (i = 0; i <= 360; i++)
         {
             id_1 = -1;
             id_2 = -1;
             max_distance_road = 0;
             red_points = 0;
-        
+
+            // A for ciklussal végig megyünk az összes körvonalon. 
             for (j = 0; j < index; j++)
             {
+                // A for ciklussal végig megyünk az adott körvonal összes pontján. 
                 for (k = 0; k < index_array[j]; k++)
                 {
+                    // Ha találunk az adott fokban nem út pontot (piros pont), akkor break utasítással kilépünk, 
+                    // nem vizsgáljuk tovább, mert nem lesz utána már út pont. 
+                    // A red_point változóba 1-es érték kerül. 
                     if (arr_3d[j][k][6] != 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
                     {
                         red_points = 1;
                         break;
                     }
 
+                    // Ha adott fokban találunk út pontot (zöld pont), akkor megvizsgáljuk az adott pontnak az origótól vett távolságát.  
                     if (arr_3d[j][k][6] == 1 && arr_3d[j][k][4] >= i && arr_3d[j][k][4] < i + 1)
                     {
                         d = sqrt(pow(0 - arr_3d[j][k][0], 2) + pow(0 - arr_3d[j][k][1], 2));
 
+                        // Ha az origótól vett távolsága nagyobb az adott pontnak, mint az eddig a max_distance_road változóban tárolt érték,
+                        // akkor új értékként ez kerül eltárolsára. Emellett eltároljuk az adott pont azonosítóit is (körvonal, hanyadik pont)
                         if (d > max_distance_road)
                         {
                             max_distance_road = d;
@@ -725,10 +746,13 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     }
                 }
 
+                // Ezzel a break utasítással nem vizsgáljuk a további körvonalakat, hanem a következő fok vizsgálatával folytatjuk. 
                 if (red_points == 1)
                     break;
             }
 
+            // Amennyiben megtaláltuk a legtávolabb lévő út pontot adott fokban, akkor a tömbhöz hozzáadjuk a pontot. 
+            // Hozzáadjuk az adott pont X, Y, Z koordinátáját és a red_points értékét. A c változóval számoljuk a pontok darabszámát. 
             if (id_1 != -1 && id_2 != -1)
             {
                 marker_array_points[c][0] = arr_3d[id_1][id_2][0];
@@ -760,7 +784,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
                                                  marker_array_points[i][0], marker_array_points[i][1],
                                                  marker_array_points[i - j][0], marker_array_points[i - j][1]);
-
                 if (d > epsilon)
                 {
                     counter++;
@@ -786,7 +809,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
                                                      marker_array_points[i - 1][0], marker_array_points[i - 1][1],
                                                      marker_array_points[i - j][0], marker_array_points[i - j][1]);
-
                     if (d > epsilon)
                     {
                         counter++;
@@ -810,7 +832,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
                                                  marker_array_points[i - 2][0], marker_array_points[i - 2][1],
                                                  marker_array_points[i - 3][0], marker_array_points[i - 3][1]);
-
                 if (d > epsilon)
                 {
                     simp_marker_array_points[count][0] = marker_array_points[i - 3][0];             
@@ -857,20 +878,17 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             if (simp_marker_array_points[count - 1][3] == 1 && simp_marker_array_points[count - 2][3] == 0)
                 simp_marker_array_points[count - 1][3] = 0;
 
-
             for (i = 2; i <= count - 3; i++)
             {
                 if (simp_marker_array_points[i][3] == 0 && simp_marker_array_points[i - 1][3] == 1 && simp_marker_array_points[i + 1][3] == 1)
                     simp_marker_array_points[i][3] = 1;
             }
 
-
             for (i = 2; i <= count - 3; i++)
             {
                 if (simp_marker_array_points[i][3] == 1 && simp_marker_array_points[i - 1][3] == 0 && simp_marker_array_points[i + 1][3] == 0)
                     simp_marker_array_points[i][3] = 0;
             }
-
 
             visualization_msgs::MarkerArray marker_arr;
             visualization_msgs::Marker line_segment;
@@ -889,7 +907,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 point.y = simp_marker_array_points[i][1];
                 point.z = simp_marker_array_points[i][2];
             
-
                 if (i == 0)
                 {
                     line_segment.points.push_back(point);
@@ -937,7 +954,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     }
                 }
 
-
                 else if (simp_marker_array_points[i][3] != simp_marker_array_points[i - 1][3] && simp_marker_array_points[i][3] == 0)
                 {
                     line_segment.points.push_back(point);
@@ -967,7 +983,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.points.clear();
                     line_segment.points.push_back(point);
                 }
-
 
                 else if (simp_marker_array_points[i][3] != simp_marker_array_points[i - 1][3] && simp_marker_array_points[i][3] == 1)
                 {
@@ -1013,7 +1028,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
 
             pub_marker_array.publish(marker_arr);
-
         }
 
 
@@ -1029,7 +1043,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         }
 
         delete[] arr_3d;
-
     }
     
     filtered_frame.header = msg.header;
@@ -1039,8 +1052,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
     pub_non_road.publish(filtered_non_road);
 
     filtered_road.header = msg.header;
-    pub_road.publish(filtered_road);
-    
+    pub_road.publish(filtered_road);   
 }
 
 
