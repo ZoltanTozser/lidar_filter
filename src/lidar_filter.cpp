@@ -864,62 +864,90 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         // MARKER ÖSSZEÁLLÍTÁSA
 
+        // A program megvizsgálja, hogy van-e 3 darab marker pont, amit össze lehet kötni. Ha nincs, akkor nem hajtja végre az if feltétel alatt lévő utasításokat. 
         if (count > 2)
         {
+            // Amennyiben a simp_marker_array_points tömbnek a 4. oszlopában 1-es érték szerepel, akkor az a piros line_segment-hez tartozik. 
+            // Ha 0-ás érték szerepel, akkor pedig a zöld line_segment-hez tartozik. 
+            
+            // Az első és az utolsó pontokat beállítjuk, hogy ne legyen zöld-piros-zöld vagy piros-zöld-piros eset. 
+
+            // Amennyiben az első pont zöld és a második piros, akkor az első is piros line_segment-be kerüljön.  
             if (simp_marker_array_points[0][3] = 0 && simp_marker_array_points[1][3] == 1)
                 simp_marker_array_points[0][3] = 1;
 
+            // Amennyiben az utolsó pont zöld és az utolsó előtti piros, akkor az utolsó is piros line_segment-be kerüljön. 
             if (simp_marker_array_points[count - 1][3] == 0 && simp_marker_array_points[count - 2][3] == 1)
                 simp_marker_array_points[count - 1][3] == 1;
 
+            // Amennyiben az első pont piros és a második zöld, akkor az első is zöld line_segment-be kerüljön. 
             if (simp_marker_array_points[0][3] = 1 && simp_marker_array_points[1][3] == 0)
                 simp_marker_array_points[0][3] = 0;
 
+            // Amennyiben az utolsó pont piros és az utolsó előtti zöld, akkor az utolsó is zöld line_segment-be kerüljön. 
             if (simp_marker_array_points[count - 1][3] == 1 && simp_marker_array_points[count - 2][3] == 0)
                 simp_marker_array_points[count - 1][3] = 0;
 
+            // Egy for ciklussal végig megyünk a pontokon. Amennyiben egy zöld pontot közrefog két piros pont, akkkor a zöld pont is piros line_segment-be kerül. 
+            // Itt fontos, hogy az első kettő és az utolsó kettő pontot nem kell vizsgálni, hiszen ezeket már az előzőekben beállítottuk. 
             for (i = 2; i <= count - 3; i++)
             {
                 if (simp_marker_array_points[i][3] == 0 && simp_marker_array_points[i - 1][3] == 1 && simp_marker_array_points[i + 1][3] == 1)
                     simp_marker_array_points[i][3] = 1;
             }
 
+            // Egy for ciklussal végig megyünk ismét a pontokon. Amennyiben egy piros pontot közrefog két zöld pont, akkkor a piros pont is zöld line_segment-be kerül. 
+            // Itt fontos, hogy az első kettő és az utolsó kettő pontot nem kell vizsgálni, hiszen ezeket már az előzőekben beállítottuk. 
             for (i = 2; i <= count - 3; i++)
             {
                 if (simp_marker_array_points[i][3] == 1 && simp_marker_array_points[i - 1][3] == 0 && simp_marker_array_points[i + 1][3] == 0)
                     simp_marker_array_points[i][3] = 0;
             }
 
+            // Egy marker array objektum, amiben eltároljuk a zöld és piros line_segment-eket. 
             visualization_msgs::MarkerArray marker_arr;
+
+            // Egy marker objektum, amiben az adott zöld, vagy piros szakaszt (line strip) tároljuk. 
             visualization_msgs::Marker line_segment;
+
+            // Egy point objektum, ami az adott pont értékét tárolja. Ezzel töltjük fel az adott line_segment-et. 
             geometry_msgs::Point point;          
 
+            // Tárolja az adott line_segment ID-jét (azonosítóját). 
             int line_segment_id = 0;
 
+            // Beállítjuk a hozzáadáshoz szükséges parméterket a line_segment-nek. 
             line_segment.header.frame_id = fixed_frame;
             line_segment.header.stamp = ros::Time();
             line_segment.type = visualization_msgs::Marker::LINE_STRIP;
             line_segment.action = visualization_msgs::Marker::ADD;
 
+            // Végigmegyünk az összes ponton, amik majd a markert fogják alkotni. 
             for (i = 0; i < count; i++)
             {
+                // Hozzáadjuk az adott pontot a geometry_msgs::Point típusú objektumhoz. 
                 point.x = simp_marker_array_points[i][0];
                 point.y = simp_marker_array_points[i][1];
                 point.z = simp_marker_array_points[i][2];
             
+                // Az első pont hozzáadása az adott line_segment-hez. Itt semmilyen feltételt nem kell megadni. 
                 if (i == 0)
                 {
                     line_segment.points.push_back(point);
                 }
 
+
+                // Amennyiben a következő pont is ugyanabba a csoportba fog tartozni, mint az előző, akkor ezt is hozzá fogjuk adni az adott line_segment-hez. 
                 else if (simp_marker_array_points[i][3] == simp_marker_array_points[i - 1][3])
                 {
                     line_segment.points.push_back(point);
 
+                    // Az utolsó pont vizsgálata, itt készül el az utolsó line_segment. 
                     if (i == count - 1)
                     {
                         line_segment.id = line_segment_id;
 
+                        // line_segment beállítások
                         line_segment.pose.position.x = 0;
                         line_segment.pose.position.y = 0;
                         line_segment.pose.position.z = 0;
@@ -933,6 +961,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                         line_segment.scale.y = 0.5;
                         line_segment.scale.z = 0.5;
                     
+                        // Itt beállítjuk a line_segment színét. 
+                        // Ha a 4. oszlopban az érték 0, akkor zöld színű a line_segment
                         if (simp_marker_array_points[i][3] == 0)
                         {
                             line_segment.color.a = 1.0;
@@ -941,6 +971,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                             line_segment.color.b = 0.0;
                         }
 
+                        // Egyébként piros színű a line_segment
                         else
                         {
                             line_segment.color.a = 1.0;
@@ -949,18 +980,25 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                             line_segment.color.b = 0.0;
                         }
 
+                        // Hozzáadjuk a line_segment-et a marker array-hez. 
                         marker_arr.markers.push_back(line_segment);
+
+                        // Kitöröljük a pontokat az utolsó line_segment-ből, feleslegesen ne tároljuk. 
                         line_segment.points.clear();
                     }
                 }
-
+                
+                // Csoportváltozás történik, pirosról zöldre fog váltani. 
+                // Ebben az esetben még a két pontot piros marker fogja összekötni, így hozzáadjuk a pontot az adott line_segment-hez. 
                 else if (simp_marker_array_points[i][3] != simp_marker_array_points[i - 1][3] && simp_marker_array_points[i][3] == 0)
                 {
                     line_segment.points.push_back(point);
 
+                    // A következő pontok már új line_segment-hez fognak tartozni, elkészül az egyik piros. 
                     line_segment.id = line_segment_id;
                     line_segment_id++;
 
+                    // line_segment beállítások
                     line_segment.pose.position.x = 0;
                     line_segment.pose.position.y = 0;
                     line_segment.pose.position.z = 0;
@@ -979,18 +1017,28 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.color.g = 0.0;
                     line_segment.color.b = 0.0;
 
+                    // Hozzáadjuk a line_segment-et a marker array-hez.
                     marker_arr.markers.push_back(line_segment);
+                    
+                    // Kitöröljük a pontokat a line_segment-ből, feleslegesen ne tároljuk. 
                     line_segment.points.clear();
+
+                    // A következő zöld line_segment-nél erre a pontra szükség van, ezért hozzáadjuk. 
                     line_segment.points.push_back(point);
                 }
-
+               
+                // Csoportváltozás történik, zöldról pirosra fog váltani.
+                // Először beállítjuk a zöld line_segment-et, majd hozzáadjuk az utolsó pontot a piroshoz is.
+                // Zöld és piros pont között mindig piros line_segment van. 
                 else if (simp_marker_array_points[i][3] != simp_marker_array_points[i - 1][3] && simp_marker_array_points[i][3] == 1)
                 {
                     line_segment.points.push_back(point);
 
+                    // Zöld marker 
                     line_segment.id = line_segment_id;
                     line_segment_id++;
 
+                     // line_segment beállítások
                     line_segment.pose.position.x = 0;
                     line_segment.pose.position.y = 0;
                     line_segment.pose.position.z = 0;
@@ -1009,24 +1057,30 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.color.g = 1.0;
                     line_segment.color.b = 0.0;
 
+                    // Hozzáadjuk a line_segment-et a marker array-hez.
                     marker_arr.markers.push_back(line_segment);
+                    
+                    // Kitöröljük a pontokat a line_segment-ből, feleslegesen ne tároljuk. 
                     line_segment.points.clear();
                 
+                    // A következő piros line_segment-hez szügség van az előző pontra is. 
                     point.x = simp_marker_array_points[i - 1][0];
                     point.y = simp_marker_array_points[i - 1][1];
                     point.z = simp_marker_array_points[i - 1][2];
                     line_segment.points.push_back(point);
                     
-                
+                    // A következő piros line_segment-hez szükség van a jelenlegi pontra. 
                     point.x = simp_marker_array_points[i][0];
                     point.y = simp_marker_array_points[i][1];
                     point.z = simp_marker_array_points[i][2];
                     line_segment.points.push_back(point);
                 }
 
+                // A line_segment élettartamának idejét beállítjuk. 
                 line_segment.lifetime = ros::Duration(0.04);
             }
-
+            
+            // A marker array közzététele. 
             pub_marker_array.publish(marker_arr);
         }
 
@@ -1045,12 +1099,16 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
         delete[] arr_3d;
     }
     
+    // A topic-ok header-je és a topic-ok publikálása. 
+    // Vizsgált terület pontjainak publikálása. 
     filtered_frame.header = msg.header;
     pub_frame.publish(filtered_frame);
     
+    // Nem út pont publikálása. 
     filtered_non_road.header = msg.header;
     pub_non_road.publish(filtered_non_road);
 
+    // Út pontok publikálása. 
     filtered_road.header = msg.header;
     pub_road.publish(filtered_road);   
 }
@@ -1058,18 +1116,23 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
 int main(int argc, char **argv)
 {
+    // ROS inicializálása. 
     ros::init(argc, argv, "lidarFilter");
 
+    // Paraméter ablak beállításához szükség sorok (dynamic reconfigure). 
     dynamic_reconfigure::Server<lidar_filter::dynamic_reconfConfig> server;
     dynamic_reconfigure::Server<lidar_filter::dynamic_reconfConfig>::CallbackType f;
 
     f = boost::bind(&params_callback, _1, _2);
     server.setCallback(f);
 
+    // Node létrehozása. 
     ros::NodeHandle node;
 
+    // Felíratkozás egy adott topic-ra. 
     ros::Subscriber sub = node.subscribe(topic_name, 1, filter);
     
+    // A filterezett adatok közzététele. 
     pub_frame = node.advertise<pcl::PCLPointCloud2>("filtered_frame", 1);
     pub_non_road = node.advertise<pcl::PCLPointCloud2>("filtered_non_road", 1);
     pub_road = node.advertise<pcl::PCLPointCloud2>("filtered_road", 1);
