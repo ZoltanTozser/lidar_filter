@@ -129,7 +129,7 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
     float dx = bx - ax;
     float dy = by - ay;
 
-    // Normalizálás
+    // Normalizálás 
     float mag = sqrt(pow(dx, 2) + pow(dy, 2));
     
     if (mag > 0.0)
@@ -144,12 +144,13 @@ float perpendicular_distance(float ax, float ay, float bx, float by, float point
     float pv_dot = dx * pv_x + dy * pv_y;
 
     // Léptékvonal irányvektor
-    float ds_x = pv_x * dx;
-    float ds_y = pv_y * dy;
+    float ds_x = pv_dot * dx;
+    float ds_y = pv_dot * dy;
 
     float a_x = pv_x - ds_x;
     float a_y = pv_y - ds_y;
 
+    // Visszatérünk a merőleges távolság eredményével. 
     return sqrt(pow(a_x, 2) + pow(a_y, 2));
 }
 
@@ -486,7 +487,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
             
-
             // FILTER 2
 
             // A adott kör pontjainak vizsgálata. Z = 0 érték mellett. 
@@ -766,30 +766,43 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         // MARKER PONTHALMAZ EGYSZERŰSÍTÉSE LANG ALGORITMUSSAL 
 
+        // Egyszerűsített ponthalmaz tárolásához szükséges kétdimenziós tömb. 
         float simp_marker_array_points[c][4];
+        
+        // Számolja az egyszerűsített pontok számát. 
         int count = 0;
+        
+        // Vizsgálatok számát figyeli. 
         int counter = 0;
 
+        // A for ciklussal hozzáadjuk a tömbhöz az első pont értékeit (X, Y, Z, 0-ás vagy 1-es)
         for (i = 0; i < 4; i++)
         {
             simp_marker_array_points[0][i] = marker_array_points[0][i];
         }
-
+        // A for ciklussal vizsgáljuk a pontokat. 
         for (i = 4; i <= c - 1; i = i + 4)
         {
+            // Első vizsgálat (i). 
             counter = 0;
 
+            // Kiszámoljuk a három pont merőleges távolságát. 
             for (j = 1; j <= 3; j++)
             {
                 float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
                                                  marker_array_points[i][0], marker_array_points[i][1],
                                                  marker_array_points[i - j][0], marker_array_points[i - j][1]);
+                
+                // Ha adott pontnál a merőleges távolság nagyobb, mint az epsilon, 
+                // akkor nem vizsgálódik tovább, break utasítással kilép. 
                 if (d > epsilon)
                 {
                     counter++;
                     break;
                 }
 
+                // Ha kiszámoltuk mind a három pont merőleges távolságát és 
+                // epsilon mind a három esetben nagyobb volt, akkor az adott pontot (i) hozzáadjuk az egyszerűsített tömbhöz.  
                 if (j == 3 && d < epsilon)
                 {
                     simp_marker_array_points[count][0] = marker_array_points[i][0];             
@@ -799,22 +812,29 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     count++;
                 }
             }
-    
+            // Ha már az első merőleges távolság vizsgálatkor d > epsilon, akkor újabb kettő vizsgálat történik (i - 1).  
             if (counter == 1)
             {
+                // Második vizsgálat. 
                 counter = 2;
 
+                // Kiszámoljuk a kettő pont merőleges távolságát.
                 for (j = 2; j <= 3; j++)
                 {
                     float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
                                                      marker_array_points[i - 1][0], marker_array_points[i - 1][1],
                                                      marker_array_points[i - j][0], marker_array_points[i - j][1]);
+                    
+                    // Ha adott pontnál a merőleges távolság nagyobb, mint az epsilon, 
+                    // akkor nem vizsgálódik tovább, break utasítással kilép.
                     if (d > epsilon)
                     {
                         counter++;
                         break;
                     }
 
+                    // Ha kiszámoltuk mind a kettő pont merőleges távolságát és 
+                    // epsilon mind a kettő esetben nagyobb volt, akkor az adott pontot (i - 1) hozzáadjuk az egyszerűsített tömbhöz.  
                     if (j == 3 && d < epsilon)
                     {
                         simp_marker_array_points[count][0] = marker_array_points[i - 1][0];             
@@ -827,11 +847,16 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
             }
             
+            // Ha már a második merőleges távolság vizsgálatkor d > epsilon, akkor újabb vizsgálat történik (i - 2)
             if (counter == 3)
             {
+                // Kiszámoljuk a pont merőleges távolságát.
                 float d = perpendicular_distance(marker_array_points[i - 4][0], marker_array_points[i - 4][1], 
                                                  marker_array_points[i - 2][0], marker_array_points[i - 2][1],
                                                  marker_array_points[i - 3][0], marker_array_points[i - 3][1]);
+                
+                // Ha adott pontnál a merőleges távolság nagyobb, mint az epsilon, 
+                // akkor az adott pontot (i - 3) hozzáadjuk az egyszerűsített tömbhöz.
                 if (d > epsilon)
                 {
                     simp_marker_array_points[count][0] = marker_array_points[i - 3][0];             
@@ -842,6 +867,9 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     i = i - 3;
                 }
 
+                
+                // Ha adott pontnál a merőleges távolság kisebb, mint az epsilon, 
+                // akkor az adott pontot (i - 2) hozzáadjuk az egyszerűsített tömbhöz.
                 if (d < epsilon)
                 {
                     simp_marker_array_points[count][0] = marker_array_points[i - 2][0];             
@@ -854,6 +882,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             }
         }
 
+        // A for ciklussal hozzáadjuk a tömbhöz az utolsó pont értékeit (X, Y, Z, 0-ás vagy 1-es)
         for (i = 0; i < 4; i++)
         {
             simp_marker_array_points[count][i] = marker_array_points[c - 1][i];
