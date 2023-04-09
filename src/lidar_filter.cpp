@@ -76,6 +76,7 @@ void params_callback(lidar_filter::dynamic_reconfConfig &config, uint32_t level)
  
 // GYORSRENDEZŐ SEGÉDFÜGGVÉNYEK 
 
+// Segédfüggvény, ami a két elemet felcseréli (swap)
 void swap(float *a, float *b)
 {
     float temp = *a;
@@ -83,6 +84,8 @@ void swap(float *a, float *b)
     *b = temp;
 }
 
+// Ez a függvény az utolsó elemet pivotnak veszi, a pivot elemet a megfelelő helyre helyezi a rendezett tömbben.
+// Az összes kisebbet (tehát kisebb, mint a pivot) a pivottól balra, a nagyonn elemeket pedig jobbra helyezi. 
 int partition(float ***arr_3d, int arc, int piece, int low, int high)
 {
     float pivot = arr_3d[arc][low][4];
@@ -91,16 +94,19 @@ int partition(float ***arr_3d, int arc, int piece, int low, int high)
 
     while (true)
     {
+        // Keresse meg a bal szélső elemet, amely nagyobb, mint a pivot. 
         do
         {
             i++;
         } while (arr_3d[arc][i][4] < pivot);
 
+        // Keresse meg a jobb szélső elemet, amely kisebb, mint a pivot. 
         do
         {
             j--;
         } while (arr_3d[arc][j][4] > pivot);
 
+        // Ha két mutató találkozik.         
         if (i >= j)
             return j;
 
@@ -111,11 +117,16 @@ int partition(float ***arr_3d, int arc, int piece, int low, int high)
     }
 }
 
+// A gyorsrendező fő függvénye.
+// Az arr_3d a rendezendő tömb, low a kezdő index, high a befejező index.
 void quicksort(float ***arr_3d, int arc, int piece, int low, int high)
 {
     if (low < high)
     {
+        // pi a particionálási index.
         int pi = partition(arr_3d, arc, piece, low, high);
+        
+        // Az elemek külön rendezése a partíció előtt és a partíció után. 
         quicksort(arr_3d, arc, piece, low, pi);
         quicksort(arr_3d, arc, piece, pi + 1, high);
     }
