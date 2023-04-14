@@ -1,4 +1,4 @@
-// A program futtatásához azükséges include állományok. Ezek javarészt matematikai függvények gyűjteménye, 
+// A program futtatásához a szükséges include állományok. Ezek javarészt matematikai függvények gyűjteménye, 
 // ROS-hoz, pointcloud-ok, marker-ek, dynamic reconfigure használatához szükséges állományok.   
 #include <iostream>
 #include <cmath>
@@ -14,7 +14,7 @@
 
 // GLOBÁLIS VÁLTOZÓK
 
-// A topic név (amire felíratkozunk) és fixed frame tárolásához szükséges string változók.
+// A topic név (amire felíratkozunk) és a fixed frame tárolásához szükséges string változók.
 std::string topic_name;
 std::string fixed_frame;
 
@@ -53,7 +53,7 @@ float epsilon;
 
 // PARAMÉTEREK BEÁLLÍTÁSÁHOZ SZÜKSÉGES FÜGGVÉNY
 
-// (Az értékeket a cfg könyvtárban található dynamic_reconf.cfg nevű fájlból veszi).
+// Az értékeket a cfg könyvtárban található dynamic_reconf.cfg nevű fájlból veszi.
 void params_callback(lidar_filter::dynamic_reconfConfig &config, uint32_t level)
 {
     fixed_frame = config.fixed_frame;
@@ -76,7 +76,7 @@ void params_callback(lidar_filter::dynamic_reconfConfig &config, uint32_t level)
  
 // GYORSRENDEZŐ SEGÉDFÜGGVÉNYEK 
 
-// Segédfüggvény, ami a két elemet felcseréli (swap)
+// Segédfüggvény, ami a két elemet felcseréli (swap).
 void swap(float *a, float *b)
 {
     float temp = *a;
@@ -85,7 +85,7 @@ void swap(float *a, float *b)
 }
 
 // Ez a függvény az utolsó elemet pivotnak veszi, a pivot elemet a megfelelő helyre helyezi a rendezett tömbben.
-// Az összes kisebbet (tehát kisebb, mint a pivot) a pivottól balra, a nagyonn elemeket pedig jobbra helyezi. 
+// Az összes kisebbet (tehát kisebb, mint a pivot) a pivottól balra, a nagyobb elemeket pedig jobbra helyezi. 
 int partition(float ***arr_3d, int arc, int piece, int low, int high)
 {
     float pivot = arr_3d[arc][low][4];
@@ -106,7 +106,7 @@ int partition(float ***arr_3d, int arc, int piece, int low, int high)
             j--;
         } while (arr_3d[arc][j][4] > pivot);
 
-        // Ha két mutató találkozik.         
+        // Ha a két mutató találkozik.         
         if (i >= j)
             return j;
 
@@ -123,7 +123,7 @@ void quicksort(float ***arr_3d, int arc, int piece, int low, int high)
 {
     if (low < high)
     {
-        // pi a particionálási index.
+        // Pi a particionálási index.
         int pi = partition(arr_3d, arc, piece, low, high);
         
         // Az elemek külön rendezése a partíció előtt és a partíció után. 
@@ -281,7 +281,6 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             else if (arr_2d[i][2] >= 0)
                 arr_2d[i][4] = (asin(part_result) * 180 / M_PI) + 90;
                 
-
             // Az alapvetés az, hogy az adott szög új körvonalhoz tartozik. 
             new_circle = 1;
 
@@ -291,7 +290,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 break;
 
                 // Ha már korábban volt ilyen érték (egy meghatározott intervallumon belül), akkor ez nem egy új körív.
-                // A new_Circle-be így nulla kerül és break-kel kilépünk a folyamatból. 
+                // A new_circle-be így nulla kerül és break-kel kilépünk a folyamatból. 
                 if (abs(angle[j] - arr_2d[i][4]) <= interval)
                 {
                     new_circle = 0;
@@ -460,7 +459,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     pow(arr_3d[i][point_3][0] - arr_3d[i][j][0], 2) + 
                     pow(arr_3d[i][point_3][1] - arr_3d[i][j][1], 2));
                 
-                // Feltételhez kötjük, hogy a két szélsző pont közötti távolság kissebbnek kell lenni 5 méternél. 
+                // Feltételhez kötjük, hogy a két szélsző pont közötti távolság kisebbnek kell lenni 5 méternél. 
                 if (d < 5.0000)
                 {
                     // Meghatározzuk a három pont által bezárt háromszög oldalainak hosszát (x1, x2, x3).
@@ -508,7 +507,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     pow(arr_3d[i][j + curb_points][0] - arr_3d[i][j - curb_points][0], 2) +
                     pow(arr_3d[i][j + curb_points][1] - arr_3d[i][j - curb_points][1], 2));
                 
-                // Feltételhez kötjük, hogy a két vektor szélsző pont közötti távolság kissebbnek kell lenni 5 méternél. 
+                // Feltételhez kötjük, hogy a két vektor szélsző pont közötti távolság kisebbnek kell lenni 5 méternél. 
                 if (d < 5.0000)
                 {
                     // Kezdeti értékek beállítása. A max változókba bekerül Z abszolút értéke.
@@ -686,7 +685,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                 }
 
                 // Út pontok hozzáadása a filtered_road-hoz,
-                // amennyiben a tömb 7. oszlopában 2-es szám van. 
+                // amennyiben a tömb 7. oszlopában 1-es szám van. 
                 else if (arr_3d[i][j][6] == 1)
                 {
                     pt.x = arr_3d[i][j][0];
@@ -726,10 +725,10 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             max_distance_road = 0;
             red_points = 0;
 
-            // A for ciklussal végig megyünk az összes körvonalon. 
+            // A for ciklussal végigmegyünk az összes körvonalon. 
             for (j = 0; j < index; j++)
             {
-                // A for ciklussal végig megyünk az adott körvonal összes pontján. 
+                // A for ciklussal végigmegyünk az adott körvonal összes pontján. 
                 for (k = 0; k < index_array[j]; k++)
                 {
                     // Ha találunk az adott fokban nem út pontot (piros pont), akkor break utasítással kilépünk, 
@@ -904,7 +903,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
 
         // MARKER ÖSSZEÁLLÍTÁSA
 
-        // A program megvizsgálja, hogy van-e 3 darab marker pont, amit össze lehet kötni. Ha nincs, akkor nem hajtja végre az if feltétel alatt lévő utasításokat. 
+        // A program megvizsgálja, hogy van-e 3 darab marker pont, amit össze lehet kötni. 
+        // Ha nincs, akkor nem hajtja végre az if feltétel alatt lévő utasításokat. 
         if (count > 2)
         {
             // Amennyiben a simp_marker_array_points tömbnek a 4. oszlopában 1-es érték szerepel, akkor az a piros line_segment-hez tartozik. 
@@ -928,7 +928,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
             if (simp_marker_array_points[count - 1][3] == 1 && simp_marker_array_points[count - 2][3] == 0)
                 simp_marker_array_points[count - 1][3] = 0;
 
-            // Egy for ciklussal végig megyünk a pontokon. Amennyiben egy zöld pontot közrefog két piros pont, akkkor a zöld pont is piros line_segment-be kerül. 
+            // Egy for ciklussal végigmegyünk a pontokon. Amennyiben egy zöld pontot közrefog két piros pont, 
+            // akkkor a zöld pont is piros line_segment-be kerül. 
             // Itt fontos, hogy az első kettő és az utolsó kettő pontot nem kell vizsgálni, hiszen ezeket már az előzőekben beállítottuk. 
             for (i = 2; i <= count - 3; i++)
             {
@@ -936,7 +937,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     simp_marker_array_points[i][3] = 1;
             }
 
-            // Egy for ciklussal végig megyünk ismét a pontokon. Amennyiben egy piros pontot közrefog két zöld pont, akkkor a piros pont is zöld line_segment-be kerül. 
+            // Egy for ciklussal végigmegyünk ismét a pontokon. Amennyiben egy piros pontot közrefog két zöld pont, 
+            // akkkor a piros pont is zöld line_segment-be kerül. 
             // Itt fontos, hogy az első kettő és az utolsó kettő pontot nem kell vizsgálni, hiszen ezeket már az előzőekben beállítottuk. 
             for (i = 2; i <= count - 3; i++)
             {
@@ -976,8 +978,8 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.points.push_back(point);
                 }
 
-
-                // Amennyiben a következő pont is ugyanabba a csoportba fog tartozni, mint az előző, akkor ezt is hozzá fogjuk adni az adott line_segment-hez. 
+                // Amennyiben a következő pont is ugyanabba a csoportba fog tartozni, mint az előző, 
+                // akkor ezt is hozzá fogjuk adni az adott line_segment-hez. 
                 else if (simp_marker_array_points[i][3] == simp_marker_array_points[i - 1][3])
                 {
                     line_segment.points.push_back(point);
@@ -987,7 +989,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     {
                         line_segment.id = line_segment_id;
 
-                        // line_segment beállítások
+                        // Line_segment beállítások
                         line_segment.pose.position.x = 0;
                         line_segment.pose.position.y = 0;
                         line_segment.pose.position.z = 0;
@@ -1002,7 +1004,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                         line_segment.scale.z = 0.5;
                     
                         // Itt beállítjuk a line_segment színét. 
-                        // Ha a 4. oszlopban az érték 0, akkor zöld színű a line_segment
+                        // Ha a 4. oszlopban az érték 0, akkor zöld színű a line_segment.
                         if (simp_marker_array_points[i][3] == 0)
                         {
                             line_segment.color.a = 1.0;
@@ -1011,7 +1013,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                             line_segment.color.b = 0.0;
                         }
 
-                        // Egyébként piros színű a line_segment
+                        // Egyébként piros színű a line_segment.
                         else
                         {
                             line_segment.color.a = 1.0;
@@ -1038,7 +1040,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.id = line_segment_id;
                     line_segment_id++;
 
-                    // line_segment beállítások
+                    // Line_segment beállítások.
                     line_segment.pose.position.x = 0;
                     line_segment.pose.position.y = 0;
                     line_segment.pose.position.z = 0;
@@ -1078,7 +1080,7 @@ void filter(const pcl::PointCloud<pcl::PointXYZ> &msg)
                     line_segment.id = line_segment_id;
                     line_segment_id++;
 
-                     // line_segment beállítások
+                     // Line_segment beállítások
                     line_segment.pose.position.x = 0;
                     line_segment.pose.position.y = 0;
                     line_segment.pose.position.z = 0;
